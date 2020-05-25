@@ -10,9 +10,9 @@ interface CacheFactoryInterface
      * @param ServicesFactory $services
      * @param string $cacheClassName
      * @param array $cacheParameters
-     * @param array|null $granularCacheParameters
+     * @param bool $implementsGranularCache
      */
-    public function __construct(ServicesFactory $services, string $cacheClassName, array $cacheParameters, ?array $granularCacheParameters=null);
+    public function __construct(ServicesFactory $services, string $cacheClassName, array $cacheParameters=null, bool $implementsGranularCache=false);
 
     /**
      * @return CacheInterface|null
@@ -20,7 +20,13 @@ interface CacheFactoryInterface
     public function generateCache() : ?CacheInterface;
 
     /**
+     * @param array $granularCacheParameters
      * @return CacheInterface|null
      */
-    public function generateGranularCache() : ? CacheInterface;
+    public function generateGranularCache(array $granularCacheParameters) : ? CacheInterface;
+
+    /**
+     * @return bool
+     */
+    public function implementsGranularCache() : bool;
 }

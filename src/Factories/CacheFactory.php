@@ -17,24 +17,24 @@ class CacheFactory implements CacheFactoryInterface
     public string $cacheClassName;
 
     /** @var array  */
-    public array $cacheParameters;
+    public ?array $cacheParameters;
 
-    /** @var array|null  */
-    public ?array $granularCacheParameters;
+    /** @var bool  */
+    public bool $implementsGranularCache;
 
     /**
      * CacheFactory constructor.
      * @param ServicesFactory $services
      * @param string $cacheClassName
      * @param array $cacheParameters
-     * @param array|null $granularCacheParameters
+     * @param bool $implementsGranularCache
      */
-    public function __construct(ServicesFactory $services, string $cacheClassName, array $cacheParameters, ?array $granularCacheParameters=null)
+    public function __construct(ServicesFactory $services, string $cacheClassName, array $cacheParameters=null, bool $implementsGranularCache = false)
     {
         $this->services = $services;
         $this->cacheClassName = $cacheClassName;
         $this->cacheParameters = $cacheParameters;
-        $this->granularCacheParameters = $granularCacheParameters;
+        $this->implementsGranularCache = $implementsGranularCache;
     }
 
     /**
@@ -59,26 +59,33 @@ class CacheFactory implements CacheFactoryInterface
     }
 
     /**
+     * @param array $granularCacheParameters
      * @return CacheInterface|null
      */
-    public function generateGranularCache() : ? CacheInterface
+    public function generateGranularCache(array $granularCacheParameters) : ? CacheInterface
     {
         $response = null;
 
-        if ($this->granularCacheParameters !== null) {
-            try {
-                $cacheClass = new ReflectionClass($this->cacheClassName);
-                /** @var cacheInterface $response */
-                $response = $cacheClass->newInstanceArgs($this->granularCacheParameters);
-            } catch (ReflectionException $e) {
-                $this->services->logger()
-                    ->error()
-                    ->log(
-                        CacherErrorEvents::CACHE_CLASS_NOT_FOUND($this->cacheClassName, $e)
-                    );
-            }
+        try {
+            $cacheClass = new ReflectionClass($this->cacheClassName);
+            /** @var cacheInterface $response */
+            $response = $cacheClass->newInstanceArgs($granularCacheParameters);
+        } catch (ReflectionException $e) {
+            $this->services->logger()
+                ->error()
+                ->log(
+                    CacherErrorEvents::CACHE_CLASS_NOT_FOUND($this->cacheClassName, $e)
+                );
         }
 
         return $response;
+    }
+
+    /**
+     * @return bool
+     */
+    public function implementsGranularCache(): bool
+    {
+        return $this->implementsGranularCache;
     }
 }
