@@ -50,14 +50,20 @@ abstract class AbstractCache implements CacheInterface
     /**
      * @return CacheInterface|null
      */
-    abstract public function getChildCache(): ?CacheInterface;
+    public function getChildCache(): ?CacheInterface
+    {
+        return null;
+    }
 
     /**
      * @param ServicesFactory $services
      * @param bool $implementGranularCache
      * @return CacheFactoryInterface|null
      */
-    abstract public function getChildCacheFactory(ServicesFactory $services, bool $implementGranularCache): ?CacheFactoryInterface;
+    public function getChildCacheFactory(ServicesFactory $services, bool $implementGranularCache): ?CacheFactoryInterface
+    {
+        return null;
+    }
 
     /**
      * @return string
