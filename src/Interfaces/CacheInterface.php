@@ -1,6 +1,8 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Interfaces;
 
+use CarloNicora\Minimalism\Core\Services\Factories\ServicesFactory;
+
 interface CacheInterface
 {
     /**
@@ -9,9 +11,11 @@ interface CacheInterface
     public function getChildCache(): ?CacheInterface;
 
     /**
+     * @param ServicesFactory $services
+     * @param bool $implementGranularCache
      * @return CacheFactoryInterface|null
      */
-    public function getChildCacheFactory(): ?CacheFactoryInterface;
+    public function getChildCacheFactory(ServicesFactory $services, bool $implementGranularCache): ?CacheFactoryInterface;
 
     /**
      * @return string

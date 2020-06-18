@@ -1,6 +1,7 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Abstracts;
 
+use CarloNicora\Minimalism\Core\Services\Factories\ServicesFactory;
 use CarloNicora\Minimalism\Services\Cacher\Exceptions\CacheKeyNotFoundException;
 use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheFactoryInterface;
 use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheInterface;
@@ -52,9 +53,11 @@ abstract class AbstractCache implements CacheInterface
     abstract public function getChildCache(): ?CacheInterface;
 
     /**
+     * @param ServicesFactory $services
+     * @param bool $implementGranularCache
      * @return CacheFactoryInterface|null
      */
-    abstract public function getChildCacheFactory(): ?CacheFactoryInterface;
+    abstract public function getChildCacheFactory(ServicesFactory $services, bool $implementGranularCache): ?CacheFactoryInterface;
 
     /**
      * @return string
