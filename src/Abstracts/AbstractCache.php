@@ -6,7 +6,7 @@ use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheInterface;
 use ReflectionClass;
 use ReflectionException;
 
-class AbstractCache implements CacheInterface
+abstract class AbstractCache implements CacheInterface
 {
     /** @var array  */
     protected array $stringBuilder = [];
@@ -44,6 +44,11 @@ class AbstractCache implements CacheInterface
 
         return $response;
     }
+
+    /**
+     * @return CacheInterface|null
+     */
+    abstract public function getChildCache(): ?CacheInterface;
 
     /**
      * @return string

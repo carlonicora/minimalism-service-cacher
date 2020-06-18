@@ -4,6 +4,11 @@ namespace CarloNicora\Minimalism\Services\Cacher\Interfaces;
 interface CacheInterface
 {
     /**
+     * @return CacheInterface|null
+     */
+    public function getChildCache(): ?CacheInterface;
+
+    /**
      * @return string
      */
     public function getReadWriteKey() : string;
