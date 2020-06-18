@@ -9,6 +9,11 @@ interface CacheInterface
     public function getChildCache(): ?CacheInterface;
 
     /**
+     * @return CacheFactoryInterface|null
+     */
+    public function getChildCacheFactory(): ?CacheFactoryInterface;
+
+    /**
      * @return string
      */
     public function getReadWriteKey() : string;

@@ -2,6 +2,7 @@
 namespace CarloNicora\Minimalism\Services\Cacher\Abstracts;
 
 use CarloNicora\Minimalism\Services\Cacher\Exceptions\CacheKeyNotFoundException;
+use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheFactoryInterface;
 use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheInterface;
 use ReflectionClass;
 use ReflectionException;
@@ -49,6 +50,11 @@ abstract class AbstractCache implements CacheInterface
      * @return CacheInterface|null
      */
     abstract public function getChildCache(): ?CacheInterface;
+
+    /**
+     * @return CacheFactoryInterface|null
+     */
+    abstract public function getChildCacheFactory(): ?CacheFactoryInterface;
 
     /**
      * @return string
