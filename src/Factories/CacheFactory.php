@@ -5,6 +5,7 @@ use CarloNicora\Minimalism\Core\Services\Factories\ServicesFactory;
 use CarloNicora\Minimalism\Services\Cacher\Events\CacherErrorEvents;
 use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheFactoryInterface;
 use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheInterface;
+use Exception;
 use ReflectionClass;
 use ReflectionException;
 
@@ -39,6 +40,7 @@ class CacheFactory implements CacheFactoryInterface
 
     /**
      * @return CacheInterface|null
+     * @throws Exception
      */
     public function generateCache() : ?CacheInterface
     {
@@ -61,6 +63,7 @@ class CacheFactory implements CacheFactoryInterface
     /**
      * @param array $granularCacheParameters
      * @return CacheInterface|null
+     * @throws Exception
      */
     public function generateGranularCache(array $granularCacheParameters) : ? CacheInterface
     {

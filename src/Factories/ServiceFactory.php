@@ -7,6 +7,7 @@ use CarloNicora\Minimalism\Core\Services\Exceptions\ServiceNotFoundException;
 use CarloNicora\Minimalism\Core\Services\Factories\ServicesFactory;
 use CarloNicora\Minimalism\Services\Cacher\Cacher;
 use CarloNicora\Minimalism\Services\Cacher\Configurations\CacheConfigurations;
+use Exception;
 
 class ServiceFactory extends AbstractServiceFactory
 {
@@ -26,6 +27,7 @@ class ServiceFactory extends AbstractServiceFactory
      * @param servicesFactory $services
      * @return Cacher
      * @throws ServiceNotFoundException
+     * @throws Exception
      */
     public function create(servicesFactory $services) : Cacher
     {

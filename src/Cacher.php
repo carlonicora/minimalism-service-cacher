@@ -11,6 +11,7 @@ use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheInterface;
 use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisConnectionException;
 use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisKeyNotFoundException;
 use CarloNicora\Minimalism\Services\Redis\Redis;
+use Exception;
 use JsonException;
 
 class Cacher extends AbstractService
@@ -26,6 +27,7 @@ class Cacher extends AbstractService
      * @param ServiceConfigurationsInterface $configData
      * @param ServicesFactory $services
      * @throws ServiceNotFoundException
+     * @throws Exception
      */
     public function __construct(ServiceConfigurationsInterface $configData, ServicesFactory $services)
     {
@@ -63,8 +65,9 @@ class Cacher extends AbstractService
      * @param CacheInterface $cache
      * @return array
      * @throws CacheNotFoundException
+     * @noinspection PhpRedundantCatchClauseInspection
      */
-    public function readArray(CacheInterface $cache)
+    public function readArray(CacheInterface $cache): array
     {
         if (!$this->configData->getUseCache()){
             throw new CacheNotFoundException('Cache not enabled');
@@ -100,6 +103,7 @@ class Cacher extends AbstractService
     /**
      * @param CacheInterface $cache
      * @param array $value
+     * @noinspection PhpRedundantCatchClauseInspection
      */
     public function createArray(CacheInterface $cache, array $value) : void
     {
