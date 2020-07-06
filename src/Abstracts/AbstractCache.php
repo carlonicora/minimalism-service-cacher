@@ -75,42 +75,56 @@ abstract class AbstractCache implements CacheInterface
     }
 
     /**
+     * @param array $caches
      * @return array
-     * @throws cacheKeyNotFoundException|ReflectionException
+     * @throws CacheKeyNotFoundException
+     * @throws ReflectionException
      */
-    final public function getDeleteKeys(): array
+    final public function getDeleteKeys(array &$caches=[]): array
     {
         $response = [];
 
-        $response[] = $this->getKey('*');
+        if (!in_array(get_class($this), $caches, true)) {
 
-        foreach ($this->dependentCaches as $dependentCache){
-            if (class_exists($dependentCache)) {
-                $dependentCacheClass = new ReflectionClass($dependentCache);
-                $constructor = $dependentCacheClass->getConstructor();
-                $parameters = $constructor->getParameters();
+            $response[] = $this->getKey('*');
 
-                $params = [];
-                if (count($parameters) > 0) {
-                    foreach ($parameters as $parameter) {
-                        $parameterName = $parameter->getName();
-                        if (array_key_exists($parameterName, $this->parameterValues)) {
-                            $params[] = $this->parameterValues[$parameterName];
+            $caches[] = get_class($this);
+
+            foreach ($this->dependentCaches as $dependentCache) {
+                if (class_exists($dependentCache)) {
+                    $dependentCacheClass = new ReflectionClass($dependentCache);
+                    if (!in_array($dependentCacheClass, $caches, true)) {
+                        $constructor = $dependentCacheClass->getConstructor();
+                        $parameters = $constructor->getParameters();
+
+                        $caches[] = $dependentCache;
+
+                        $params = [];
+                        if (count($parameters) > 0) {
+                            foreach ($parameters as $parameter) {
+                                $parameterName = $parameter->getName();
+                                if (array_key_exists($parameterName, $this->parameterValues)) {
+                                    $params[] = $this->parameterValues[$parameterName];
+
+
+                                    /** @var cacheInterface $dependentCacheInstance */
+                                    $dependentCacheInstance = $dependentCacheClass->newInstanceArgs($params);
+
+                                    /** @noinspection SlowArrayOperationsInLoopInspection */
+                                    $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
+
+                                } else {
+                                    $params[] = null;
+                                }
+                            }
+                        } else {
                             /** @var cacheInterface $dependentCacheInstance */
-                            $dependentCacheInstance = $dependentCacheClass->newInstanceArgs($params);
+                            $dependentCacheInstance = $dependentCacheClass->newInstance();
 
                             /** @noinspection SlowArrayOperationsInLoopInspection */
-                            $response = array_merge($response, $dependentCacheInstance->getDeleteKeys());
-                        } else {
-                            $params[] = null;
+                            $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
                         }
                     }
-                } else {
-                    /** @var cacheInterface $dependentCacheInstance */
-                    $dependentCacheInstance = $dependentCacheClass->newInstance();
-
-                    /** @noinspection SlowArrayOperationsInLoopInspection */
-                    $response = array_merge($response, $dependentCacheInstance->getDeleteKeys());
                 }
             }
         }
@@ -135,5 +149,18 @@ abstract class AbstractCache implements CacheInterface
     final public function getStringBuilder() : array
     {
         return $this->stringBuilder;
+    }
+
+    /**
+     * @return array
+     */
+    public function getParameterValues(): array
+    {
+        $response = [];
+        foreach ($this->stringBuilder as $key){
+            $response[] = $this->parameterValues[$key] ?? null;
+        }
+
+        return $response;
     }
 }

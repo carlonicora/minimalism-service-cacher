@@ -23,13 +23,19 @@ interface CacheInterface
     public function getReadWriteKey() : string;
 
     /**
+     * @param array $caches
      * @return array
      */
-    public function getDeleteKeys() : array;
+    public function getDeleteKeys(array &$caches=[]) : array;
 
     /**
      * @param string $parameterName
      * @param string $parameterValue
      */
     public function addParameterValue(string $parameterName, string $parameterValue) : void;
+
+    /**
+     * @return array
+     */
+    public function getParameterValues(): array;
 }
