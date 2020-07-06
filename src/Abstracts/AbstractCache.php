@@ -91,39 +91,33 @@ abstract class AbstractCache implements CacheInterface
             $caches[] = get_class($this);
 
             foreach ($this->dependentCaches as $dependentCache) {
-                if (class_exists($dependentCache)) {
+                if (class_exists($dependentCache) && !in_array($dependentCache, $caches, true)) {
                     $dependentCacheClass = new ReflectionClass($dependentCache);
-                    if (!in_array($dependentCacheClass, $caches, true)) {
-                        $constructor = $dependentCacheClass->getConstructor();
-                        $parameters = $constructor->getParameters();
+                    $constructor = $dependentCacheClass->getConstructor();
+                    $parameters = $constructor->getParameters();
 
-                        $caches[] = $dependentCache;
+                    $params = [];
+                    if (count($parameters) > 0) {
+                        foreach ($parameters as $parameter) {
+                            $parameterName = $parameter->getName();
+                            if (array_key_exists($parameterName, $this->parameterValues)) {
+                                $params[] = $this->parameterValues[$parameterName];
 
-                        $params = [];
-                        if (count($parameters) > 0) {
-                            foreach ($parameters as $parameter) {
-                                $parameterName = $parameter->getName();
-                                if (array_key_exists($parameterName, $this->parameterValues)) {
-                                    $params[] = $this->parameterValues[$parameterName];
+                                /** @var cacheInterface $dependentCacheInstance */
+                                $dependentCacheInstance = $dependentCacheClass->newInstanceArgs($params);
 
-
-                                    /** @var cacheInterface $dependentCacheInstance */
-                                    $dependentCacheInstance = $dependentCacheClass->newInstanceArgs($params);
-
-                                    /** @noinspection SlowArrayOperationsInLoopInspection */
-                                    $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
-
-                                } else {
-                                    $params[] = null;
-                                }
+                                /** @noinspection SlowArrayOperationsInLoopInspection */
+                                $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
+                            } else {
+                                $params[] = null;
                             }
-                        } else {
-                            /** @var cacheInterface $dependentCacheInstance */
-                            $dependentCacheInstance = $dependentCacheClass->newInstance();
-
-                            /** @noinspection SlowArrayOperationsInLoopInspection */
-                            $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
                         }
+                    } else {
+                        /** @var cacheInterface $dependentCacheInstance */
+                        $dependentCacheInstance = $dependentCacheClass->newInstance();
+
+                        /** @noinspection SlowArrayOperationsInLoopInspection */
+                        $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
                     }
                 }
             }
