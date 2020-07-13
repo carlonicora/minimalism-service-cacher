@@ -19,6 +19,9 @@ abstract class AbstractCache implements CacheInterface
     /** @var array  */
     protected array $dependentCaches = [];
 
+    /** @var int  */
+    protected int $lifespan=0;
+
     /**
      * @param string $nullReplacement
      * @return string
@@ -45,6 +48,22 @@ abstract class AbstractCache implements CacheInterface
         }
 
         return $response;
+    }
+
+    /**
+     * @param int $lifespan
+     */
+    public function setLifespan(int $lifespan): void
+    {
+        $this->lifespan = $lifespan;
+    }
+
+    /**
+     * @return int
+     */
+    public function getLifespan(): int
+    {
+        return $this->lifespan;
     }
 
     /**
@@ -94,30 +113,33 @@ abstract class AbstractCache implements CacheInterface
                 if (class_exists($dependentCache) && !in_array($dependentCache, $caches, true)) {
                     $dependentCacheClass = new ReflectionClass($dependentCache);
                     $constructor = $dependentCacheClass->getConstructor();
-                    $parameters = $constructor->getParameters();
 
-                    $params = [];
-                    if (count($parameters) > 0) {
-                        foreach ($parameters as $parameter) {
-                            $parameterName = $parameter->getName();
-                            if (array_key_exists($parameterName, $this->parameterValues)) {
-                                $params[] = $this->parameterValues[$parameterName];
+                    if ($constructor !== null) {
+                        $parameters = $constructor->getParameters();
 
-                                /** @var cacheInterface $dependentCacheInstance */
-                                $dependentCacheInstance = $dependentCacheClass->newInstanceArgs($params);
+                        $params = [];
+                        if (count($parameters) > 0) {
+                            foreach ($parameters as $parameter) {
+                                $parameterName = $parameter->getName();
+                                if (array_key_exists($parameterName, $this->parameterValues)) {
+                                    $params[] = $this->parameterValues[$parameterName];
 
-                                /** @noinspection SlowArrayOperationsInLoopInspection */
-                                $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
-                            } else {
-                                $params[] = null;
+                                    /** @var cacheInterface $dependentCacheInstance */
+                                    $dependentCacheInstance = $dependentCacheClass->newInstanceArgs($params);
+
+                                    /** @noinspection SlowArrayOperationsInLoopInspection */
+                                    $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
+                                } else {
+                                    $params[] = null;
+                                }
                             }
-                        }
-                    } else {
-                        /** @var cacheInterface $dependentCacheInstance */
-                        $dependentCacheInstance = $dependentCacheClass->newInstance();
+                        } else {
+                            /** @var cacheInterface $dependentCacheInstance */
+                            $dependentCacheInstance = $dependentCacheClass->newInstance();
 
-                        /** @noinspection SlowArrayOperationsInLoopInspection */
-                        $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
+                            /** @noinspection SlowArrayOperationsInLoopInspection */
+                            $response = array_merge($response, $dependentCacheInstance->getDeleteKeys($caches));
+                        }
                     }
                 }
             }

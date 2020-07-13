@@ -38,4 +38,14 @@ interface CacheInterface
      * @return array
      */
     public function getParameterValues(): array;
+
+    /**
+     * @param int $lifespan
+     */
+    public function setLifespan(int $lifespan): void;
+
+    /**
+     * @return int
+     */
+    public function getLifespan(): int;
 }

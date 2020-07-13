@@ -96,7 +96,11 @@ class Cacher extends AbstractService
         $key = $cache->getReadWriteKey();
 
         try {
-            $this->redis->set($key, $value);
+            if ($cache->getLifespan() === 0) {
+                $this->redis->set($key, $value);
+            } else {
+                $this->redis->set($key, $value, $cache->getLifespan());
+            }
         } catch (RedisConnectionException $e) {}
     }
 
