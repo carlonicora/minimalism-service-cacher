@@ -23,6 +23,15 @@ abstract class AbstractCache implements CacheInterface
     protected int $lifespan=0;
 
     /**
+     * AbstractCache constructor.
+     * @param array $parameterValues
+     */
+    public function __construct(array $parameterValues = [])
+    {
+        $this->parameterValues = $parameterValues;
+    }
+
+    /**
      * @param string $nullReplacement
      * @return string
      * @throws CacheKeyNotFoundException
