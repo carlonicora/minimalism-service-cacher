@@ -141,6 +141,8 @@ class Cacher extends AbstractService
                     /** @noinspection SlowArrayOperationsInLoopInspection */
                     $finalKeys = array_merge($finalKeys, $this->redis->getKeys($key));
                 } catch (RedisConnectionException $e) {}
+            } else {
+                $finalKeys []= $key;
             }
         }
 
