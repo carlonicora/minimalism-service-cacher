@@ -17,7 +17,7 @@ class CacheFactory implements CacheFactoryInterface
     /** @var string  */
     public string $cacheClassName;
 
-    /** @var array  */
+    /** @var array|null  */
     public ?array $cacheParameters;
 
     /** @var bool  */
@@ -27,7 +27,7 @@ class CacheFactory implements CacheFactoryInterface
      * CacheFactory constructor.
      * @param ServicesFactory $services
      * @param string $cacheClassName
-     * @param array $cacheParameters
+     * @param array|null $cacheParameters
      * @param bool $implementsGranularCache
      */
     public function __construct(ServicesFactory $services, string $cacheClassName, array $cacheParameters=null, bool $implementsGranularCache = false)

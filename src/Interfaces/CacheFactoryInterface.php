@@ -9,7 +9,7 @@ interface CacheFactoryInterface
      * CacheFactory constructor.
      * @param ServicesFactory $services
      * @param string $cacheClassName
-     * @param array $cacheParameters
+     * @param array|null $cacheParameters
      * @param bool $implementsGranularCache
      */
     public function __construct(ServicesFactory $services, string $cacheClassName, array $cacheParameters=null, bool $implementsGranularCache=false);
