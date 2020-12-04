@@ -188,4 +188,12 @@ abstract class AbstractCache implements CacheInterface
 
         return $response;
     }
+
+    /**
+     * @return array
+    */
+    public function getCacheParameters() : array
+    {
+        return $this->stringBuilder;
+    }
 }
