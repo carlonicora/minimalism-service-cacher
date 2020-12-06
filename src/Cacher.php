@@ -206,6 +206,7 @@ class Cacher extends AbstractService
                     $identifier = str_replace(substr($childKey, 0, -1), '', $child);
                     $childBuilder = $this->factory->create(
                         $builder->getType(),
+                        $builder->getGroup(),
                         $linkedCacheName,
                         $identifier
                     );

@@ -7,21 +7,24 @@ class CacheFactory
 {
     /**
      * @param int $type
+     * @param string $group
      * @param string $cacheName
      * @param $identifier
      * @return CacheBuilder
      */
     public function create(
         int $type,
+        string $group,
         string $cacheName,
         $identifier
     ): CacheBuilder
     {
-        return new CacheBuilder($type, $cacheName, $identifier);
+        return new CacheBuilder($type, $group, $cacheName, $identifier);
     }
 
     /**
      * @param int $type
+     * @param string $group
      * @param string $listName
      * @param string $cacheName
      * @param $identifier
@@ -30,13 +33,14 @@ class CacheFactory
      */
     public function createList(
         int $type,
+        string $group,
         string $listName,
         string $cacheName,
         $identifier,
         bool $saveGranular=true
     ): CacheBuilder
     {
-        $response = $this->create($type, $cacheName, $identifier);
+        $response = $this->create($type, $group, $cacheName, $identifier);
         $response->setListName($listName);
         $response->setSaveGranular($saveGranular);
 

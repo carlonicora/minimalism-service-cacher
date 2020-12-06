@@ -10,6 +10,9 @@ class CacheBuilder
     private int $type;
 
     /** @var string  */
+    private string $group;
+
+    /** @var string  */
     private string $cacheName;
 
     /** @var mixed */
@@ -27,12 +30,14 @@ class CacheBuilder
     /**
      * CacheBuilder constructor.
      * @param int $type
+     * @param string $group
      * @param string $cacheName
      * @param $identifier
      */
-    public function __construct(int $type, string $cacheName, $identifier)
+    public function __construct(int $type, string $group, string $cacheName, $identifier)
     {
         $this->type = $type;
+        $this->group = $group;
         $this->cacheName = $cacheName;
         $this->identifier = $identifier;
     }
@@ -51,6 +56,14 @@ class CacheBuilder
     public function setType(int $type): void
     {
         $this->type = $type;
+    }
+
+    /**
+     * @return string
+     */
+    public function getGroup(): string
+    {
+        return $this->group;
     }
 
     /**
@@ -140,6 +153,8 @@ class CacheBuilder
     {
         return 'minimalism:'
             . $this->type
+            . ':'
+            . $this->group
             . ':';
     }
 
@@ -189,9 +204,11 @@ class CacheBuilder
      */
     public function getChildKey(string $childCache): string
     {
-        return $this->getKey()
+        $key = $this->getKey()
             . ':'
             . $childCache
             . ':*';
+
+        return str_replace($this->group, '*', $key);
     }
 }
