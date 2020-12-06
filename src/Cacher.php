@@ -184,7 +184,7 @@ class Cacher extends AbstractService
 
                 $list = $this->redis->getKeys($childKey);
 
-                foreach ($list as $child){
+                foreach ($list ?? [] as $child){
                     $identifier = str_replace(substr($childKey, 0, -1), '', $child);
                     $childBuilder = $this->factory->create(
                         $builder->getType(),
