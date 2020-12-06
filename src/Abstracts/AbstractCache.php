@@ -16,9 +16,6 @@ abstract class AbstractCache implements CacheInterface
     /** @var array  */
     protected array $parameterValues = [];
 
-    /** @var array  */
-    protected array $dependentCaches = [];
-
     /** @var int  */
     protected int $lifespan=0;
 
@@ -103,6 +100,14 @@ abstract class AbstractCache implements CacheInterface
     }
 
     /**
+     * @return array
+     */
+    public function getDependentCaches(): array
+    {
+        return [];
+    }
+
+    /**
      * @param array $caches
      * @return array
      * @throws CacheKeyNotFoundException
@@ -118,7 +123,7 @@ abstract class AbstractCache implements CacheInterface
 
             $caches[] = get_class($this);
 
-            foreach ($this->dependentCaches as $dependentCache) {
+            foreach ($this->getDependentCaches() as $dependentCache) {
                 if (class_exists($dependentCache) && !in_array($dependentCache, $caches, true)) {
                     $dependentCacheClass = new ReflectionClass($dependentCache);
                     $constructor = $dependentCacheClass->getConstructor();
