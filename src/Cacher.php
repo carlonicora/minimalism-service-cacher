@@ -200,6 +200,11 @@ class Cacher extends AbstractService
         }
 
         $this->invalidateKey($builder->getKey());
+
+        if ($builder->getType() === CacheBuilder::DATA){
+            $builder->setType(CacheBuilder::JSON);
+            $this->invalidate($builder);
+        }
     }
 
     /**

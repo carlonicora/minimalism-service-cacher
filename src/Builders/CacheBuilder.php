@@ -46,6 +46,14 @@ class CacheBuilder
     }
 
     /**
+     * @param int $type
+     */
+    public function setType(int $type): void
+    {
+        $this->type = $type;
+    }
+
+    /**
      * @return int|null
      */
     public function getTtl(): ?int
