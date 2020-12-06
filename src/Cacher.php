@@ -173,6 +173,16 @@ class Cacher extends AbstractService
      */
     public function invalidate(CacheBuilder $builder): void
     {
+        $this->invalidateCache($builder, true);
+    }
+
+    /**
+     * @param CacheBuilder $builder
+     * @param bool $firstRun
+     * @throws RedisConnectionException
+     */
+    private function invalidateCache(CacheBuilder $builder, bool $firstRun): void
+    {
         if ($builder->isList()){
             if (($data = $this->readArray($builder)) !== null && array_key_exists(0, $data))
             {
@@ -209,13 +219,15 @@ class Cacher extends AbstractService
 
         $this->invalidateKey($builder->getKey());
 
-        if ($builder->getType() === CacheBuilder::DATA){
-            $builder->setType(CacheBuilder::JSON);
-        } else {
-            $builder->setType(CacheBuilder::DATA);
-        }
+        if ($firstRun) {
+            if ($builder->getType() === CacheBuilder::DATA) {
+                $builder->setType(CacheBuilder::JSON);
+            } else {
+                $builder->setType(CacheBuilder::DATA);
+            }
 
-        $this->invalidate($builder);
+            $this->invalidateCache($builder, false);
+        }
     }
 
     /**
