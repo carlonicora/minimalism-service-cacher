@@ -154,7 +154,7 @@ class CacheBuilder
         return 'minimalism:'
             . $this->group
             . ':'
-            . $this->type === self::DATA ? 'DATA' : 'JSON'
+            . ($this->type === self::DATA ? 'DATA' : 'JSON')
             . ':';
     }
 
