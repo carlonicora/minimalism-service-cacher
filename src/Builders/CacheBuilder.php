@@ -152,9 +152,9 @@ class CacheBuilder
     private function getBaseKey(): string
     {
         return 'minimalism:'
-            . $this->type
-            . ':'
             . $this->group
+            . ':'
+            . $this->type === self::DATA ? 'DATA' : 'JSON'
             . ':';
     }
 
