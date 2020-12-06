@@ -86,6 +86,14 @@ class CacheBuilder
     }
 
     /**
+     * @param mixed $identifier
+     */
+    public function setIdentifier($identifier): void
+    {
+        $this->identifier = $identifier;
+    }
+
+    /**
      * @return string|null
      */
     public function getListName(): ?string

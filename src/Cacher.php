@@ -48,6 +48,14 @@ class Cacher extends AbstractService
     }
 
     /**
+     * @return CacheFactory
+     */
+    public function getFactory(): CacheFactory
+    {
+        return $this->factory;
+    }
+
+    /**
      * @param array $definitions
      */
     public function setDefinitions(array $definitions): void
