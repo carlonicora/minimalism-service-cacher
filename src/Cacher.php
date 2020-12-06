@@ -5,9 +5,9 @@ use CarloNicora\Minimalism\Core\Services\Abstracts\AbstractService;
 use CarloNicora\Minimalism\Core\Services\Exceptions\ServiceNotFoundException;
 use CarloNicora\Minimalism\Core\Services\Factories\ServicesFactory;
 use CarloNicora\Minimalism\Core\Services\Interfaces\ServiceConfigurationsInterface;
+use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
 use CarloNicora\Minimalism\Services\Cacher\Configurations\CacheConfigurations;
-use CarloNicora\Minimalism\Services\Cacher\Exceptions\CacheNotFoundException;
-use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheInterface;
+use CarloNicora\Minimalism\Services\Cacher\Factories\CacheFactory;
 use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisConnectionException;
 use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisKeyNotFoundException;
 use CarloNicora\Minimalism\Services\Redis\Redis;
@@ -20,7 +20,13 @@ class Cacher extends AbstractService
     public CacheConfigurations $configData;
 
     /** @var Redis */
-    public Redis $redis;
+    protected Redis $redis;
+
+    /** @var array  */
+    private array $definitions=[];
+
+    /** @var CacheFactory  */
+    private CacheFactory $factory;
 
     /**
      * poser constructor.
@@ -37,149 +43,163 @@ class Cacher extends AbstractService
         $this->configData = $configData;
 
         $this->redis = $services->service(Redis::class);
+
+        $this->factory = new CacheFactory();
     }
 
     /**
-     * @param CacheInterface $cache
-     * @return mixed
-     * @throws CacheNotFoundException
+     * @param array $definitions
      */
-    public function read(CacheInterface $cache) : string
+    public function setDefinitions(array $definitions): void
     {
-        if (!$this->configData->getUseCache()){
-            throw new CacheNotFoundException('Cache not enabled');
+        $this->definitions = $definitions;
+    }
+
+    /**
+     * @param string $key
+     * @param string $data
+     * @param int|null $ttl
+     * @throws RedisConnectionException
+     */
+    private function saveCache(string $key, string $data, ?int $ttl): void
+    {
+        $this->redis->set(
+            $key,
+            $data,
+            $ttl
+        );
+    }
+
+    /**
+     * @param CacheBuilder $builder
+     * @param string $data
+     * @throws RedisConnectionException
+     */
+    public function save(CacheBuilder $builder, string $data): void
+    {
+        $this->saveCache(
+            $builder->getKey(),
+            $data,
+            $builder->getTtl()
+        );
+    }
+
+    /**
+     * @param CacheBuilder $builder
+     * @param array $data
+     * @throws RedisConnectionException
+     * @throws JsonException
+     */
+    public function saveArray(CacheBuilder $builder, array $data): void
+    {
+        $jsonData = json_encode($data, JSON_THROW_ON_ERROR);
+        $this->save($builder, $jsonData);
+
+        if (
+            array_key_exists(0, $data)
+            && $builder->getType() === CacheBuilder::DATA
+            && $builder->isList()
+        ) {
+            foreach ($data as $child){
+                if (array_key_exists($builder->getListName(), $child)){
+                    $key = $builder->getListItemKey(
+                        $child[$builder->getListName()]
+                    );
+
+                    $this->saveCache($key, '*', $builder->getTtl());
+
+                    if ($builder->isSaveGranular()){
+                        $key = $builder->getGranularKey(
+                            $child[$builder->getListName()]
+                        );
+
+                        $this->saveCache(
+                            $key,
+                            json_encode($child, JSON_THROW_ON_ERROR),
+                            $builder->getTtl()
+                        );
+                    }
+                }
+            }
         }
+    }
 
-        $key = $cache->getReadWriteKey();
-
+    /**
+     * @param CacheBuilder $builder
+     * @return string|null
+     */
+    public function read(CacheBuilder $builder): ?string
+    {
         try {
-            $response = $this->redis->get($key);
+            return $this->redis->get($builder->getKey());
         } catch (RedisConnectionException|RedisKeyNotFoundException $e) {
-            throw new CacheNotFoundException($key);
+            return null;
         }
-
-        return $response;
     }
 
     /**
-     * @param CacheInterface $cache
-     * @return array
-     * @throws CacheNotFoundException
-     * @noinspection PhpRedundantCatchClauseInspection
+     * @param CacheBuilder $builder
+     * @return array|null
      */
-    public function readArray(CacheInterface $cache): array
+    public function readArray(CacheBuilder $builder): ?array
     {
-        if (!$this->configData->getUseCache()){
-            throw new CacheNotFoundException('Cache not enabled');
-        }
-
-        $response = $this->read($cache);
-
-        try{
-            $response = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException $e) {
-        }
-
-        return $response;
-    }
-
-    /**
-     * @param CacheInterface $cache
-     * @param $value
-     */
-    public function create(CacheInterface $cache, string $value) : void
-    {
-        if (!$this->configData->getUseCache()){
-            return;
-        }
-
-        $key = $cache->getReadWriteKey();
-
         try {
-            if ($cache->getLifespan() === 0) {
-                $this->redis->set($key, $value);
-            } else {
-                $this->redis->set($key, $value, $cache->getLifespan());
+            $jsonData = $this->redis->get($builder->getKey());
+            return json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR);
+        } catch (RedisConnectionException|RedisKeyNotFoundException|JsonException $e) {
+            return null;
+        }
+    }
+
+    /**
+     * @param CacheBuilder $builder
+     * @throws RedisConnectionException
+     */
+    public function invalidate(CacheBuilder $builder): void
+    {
+        if ($builder->isList()){
+            if (($data = $this->readArray($builder)) !== null && array_key_exists(0, $data))
+            {
+                foreach($data as $child){
+                    if (array_key_exists($builder->getListName(), $child)){
+                        $this->invalidateKey(
+                            $builder->getListItemKey(
+                                $child[$builder->getListName()]
+                            )
+                        );
+                    }
+                }
             }
-        } catch (RedisConnectionException $e) {}
-    }
+        } elseif (array_key_exists($builder->getCacheName(), $this->definitions)){
+            foreach ($this->definitions[$builder->getCacheName()] as $linkedCacheName){
+                $childKey = $builder->getChildKey($linkedCacheName);
 
-    /**
-     * @param CacheInterface $cache
-     * @param array $value
-     * @noinspection PhpRedundantCatchClauseInspection
-     */
-    public function createArray(CacheInterface $cache, array $value) : void
-    {
-        if (!$this->configData->getUseCache()){
-            return;
-        }
+                $list = $this->redis->getKeys($childKey);
 
-        try {
-            $stringValue = json_encode($value, JSON_THROW_ON_ERROR, 512);
-            $this->create($cache, $stringValue);
-        } catch (JsonException $e) {
-        }
-    }
+                foreach ($list as $child){
+                    $identifier = str_replace(substr($childKey, 0, -1), '', $child);
+                    $childBuilder = $this->factory->create(
+                        $builder->getType(),
+                        $linkedCacheName,
+                        $identifier
+                    );
 
-    /**
-     * @param CacheInterface $cache
-     */
-    public function delete(CacheInterface $cache) : void
-    {
-        if (!$this->configData->getUseCache()){
-            return;
-        }
+                    $this->invalidate($childBuilder);
+                }
 
-        $keys = $cache->getDeleteKeys();
-
-        $finalKeys = [];
-
-        foreach ($keys ?? [] as $key) {
-            if (substr_count($key, '*') > 0){
-                try {
-                    /** @noinspection SlowArrayOperationsInLoopInspection */
-                    $finalKeys = array_merge($finalKeys, $this->redis->getKeys($key));
-                } catch (RedisConnectionException $e) {}
-            } else {
-                $finalKeys []= $key;
+                $this->invalidateKey($childKey);
             }
         }
 
-        foreach ($finalKeys ?? [] as $key){
-            try {
-                $this->redis->remove($key);
-            } catch (RedisConnectionException $e) {}
-        }
+        $this->invalidateKey($builder->getKey());
     }
 
     /**
-     * @param CacheInterface $cache
-     * @param $value
+     * @param string $key
+     * @throws RedisConnectionException
      */
-    public function update(CacheInterface $cache, $value): void
+    private function invalidateKey(string $key): void
     {
-        if (!$this->configData->getUseCache()){
-            return;
-        }
-
-        $this->delete($cache);
-        $this->create($cache, $value);
-    }
-
-    /**
-     * @return bool
-     */
-    public function useCaching() : bool
-    {
-        return $this->configData->getUseCache();
-    }
-
-    /**
-     *
-     */
-    public function cleanNonPersistentVariables(): void
-    {
-        unset($this->services);
+        $this->redis->remove($key);
     }
 }

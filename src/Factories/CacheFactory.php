@@ -1,94 +1,45 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Factories;
 
-use CarloNicora\Minimalism\Core\Services\Factories\ServicesFactory;
-use CarloNicora\Minimalism\Services\Cacher\Events\CacherErrorEvents;
-use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheFactoryInterface;
-use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheInterface;
-use Exception;
-use ReflectionClass;
-use ReflectionException;
+use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
 
-class CacheFactory implements CacheFactoryInterface
+class CacheFactory
 {
-    /** @var ServicesFactory  */
-    private ServicesFactory $services;
-
-    /** @var string  */
-    public string $cacheClassName;
-
-    /** @var array|null  */
-    public ?array $cacheParameters;
-
-    /** @var bool  */
-    public bool $implementsGranularCache;
-
     /**
-     * CacheFactory constructor.
-     * @param ServicesFactory $services
-     * @param string $cacheClassName
-     * @param array|null $cacheParameters
-     * @param bool $implementsGranularCache
+     * @param int $type
+     * @param string $cacheName
+     * @param $identifier
+     * @return CacheBuilder
      */
-    public function __construct(ServicesFactory $services, string $cacheClassName, array $cacheParameters=null, bool $implementsGranularCache = false)
+    public function create(
+        int $type,
+        string $cacheName,
+        $identifier
+    ): CacheBuilder
     {
-        $this->services = $services;
-        $this->cacheClassName = $cacheClassName;
-        $this->cacheParameters = $cacheParameters;
-        $this->implementsGranularCache = $implementsGranularCache;
+        return new CacheBuilder($type, $cacheName, $identifier);
     }
 
     /**
-     * @return CacheInterface|null
-     * @throws Exception
+     * @param int $type
+     * @param string $listName
+     * @param string $cacheName
+     * @param $identifier
+     * @param bool $saveGranular
+     * @return CacheBuilder
      */
-    public function generateCache() : ?CacheInterface
+    public function createList(
+        int $type,
+        string $listName,
+        string $cacheName,
+        $identifier,
+        bool $saveGranular=true
+    ): CacheBuilder
     {
-        try {
-            $cacheClass = new ReflectionClass($this->cacheClassName);
-            /** @var cacheInterface $response */
-            $response = $cacheClass->newInstanceArgs($this->cacheParameters);
-        } catch (ReflectionException $e) {
-            $this->services->logger()
-                ->error()
-                ->log(
-                    CacherErrorEvents::CACHE_CLASS_NOT_FOUND($this->cacheClassName, $e)
-                );
-            $response = null;
-        }
+        $response = $this->create($type, $cacheName, $identifier);
+        $response->setListName($listName);
+        $response->setSaveGranular($saveGranular);
 
         return $response;
-    }
-
-    /**
-     * @param array $granularCacheParameters
-     * @return CacheInterface|null
-     * @throws Exception
-     */
-    public function generateGranularCache(array $granularCacheParameters) : ? CacheInterface
-    {
-        $response = null;
-
-        try {
-            $cacheClass = new ReflectionClass($this->cacheClassName);
-            /** @var cacheInterface $response */
-            $response = $cacheClass->newInstanceArgs($granularCacheParameters);
-        } catch (ReflectionException $e) {
-            $this->services->logger()
-                ->error()
-                ->log(
-                    CacherErrorEvents::CACHE_CLASS_NOT_FOUND($this->cacheClassName, $e)
-                );
-        }
-
-        return $response;
-    }
-
-    /**
-     * @return bool
-     */
-    public function implementsGranularCache(): bool
-    {
-        return $this->implementsGranularCache;
     }
 }
