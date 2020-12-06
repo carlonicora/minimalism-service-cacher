@@ -178,8 +178,8 @@ class Cacher extends AbstractService
                     }
                 }
             }
-        } elseif (array_key_exists($builder->getCacheName(), $this->definitions)){
-            foreach ($this->definitions[$builder->getCacheName()] as $linkedCacheName){
+        } elseif (array_key_exists($builder->getCacheName(), $this->definitions) && is_array($this->definitions[$builder->getCacheName()])){
+            foreach ($this->definitions[$builder->getCacheName()] ?? [] as $linkedCacheName){
                 $childKey = $builder->getChildKey($linkedCacheName);
 
                 $list = $this->redis->getKeys($childKey);
