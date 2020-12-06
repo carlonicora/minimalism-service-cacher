@@ -64,6 +64,14 @@ class Cacher extends AbstractService
     }
 
     /**
+     * @return bool
+     */
+    public function useCaching() : bool
+    {
+        return $this->configData->getUseCache();
+    }
+
+    /**
      * @param string $key
      * @param string $data
      * @param int|null $ttl
