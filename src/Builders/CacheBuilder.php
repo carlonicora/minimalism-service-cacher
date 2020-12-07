@@ -72,6 +72,17 @@ class CacheBuilder
     }
 
     /**
+     * @param string $group
+     * @return $this
+     */
+    public function withGroup(string $group): CacheBuilder
+    {
+        $this->group = $group;
+
+        return $this;
+    }
+
+    /**
      * @return int|null
      */
     public function getTtl(): ?int
