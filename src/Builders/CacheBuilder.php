@@ -7,7 +7,7 @@ class CacheBuilder
     public const JSON=2;
 
     /** @var int  */
-    private int $type;
+    private int $type=self::DATA;
 
     /** @var string  */
     private string $group;
@@ -29,15 +29,12 @@ class CacheBuilder
 
     /**
      * CacheBuilder constructor.
-     * @param int $type
-     * @param string $group
      * @param string $cacheName
      * @param $identifier
      */
-    public function __construct(int $type, string $group, string $cacheName, $identifier)
+    public function __construct(string $cacheName, $identifier)
     {
-        $this->type = $type;
-        $this->group = $group;
+        $this->group = $cacheName;
         $this->cacheName = $cacheName;
         $this->identifier = $identifier;
     }
@@ -64,6 +61,14 @@ class CacheBuilder
     public function getGroup(): string
     {
         return $this->group;
+    }
+
+    /**
+     * @param string $group
+     */
+    public function setGroup(string $group): void
+    {
+        $this->group = $group;
     }
 
     /**
@@ -152,9 +157,9 @@ class CacheBuilder
     private function getBaseKey(): string
     {
         return 'minimalism:'
-            . $this->group
+            . 'G-' . $this->group
             . ':'
-            . ($this->type === self::DATA ? 'DATA' : 'JSON')
+            . 'T-' . ($this->type === self::DATA ? 'DATA' : 'JSON')
             . ':';
     }
 
@@ -166,12 +171,12 @@ class CacheBuilder
         $response = $this->getBaseKey();
 
         if ($this->listName !== null){
-            $response .= $this->listName
+            $response .= 'L-' . $this->listName
             . ':null:';
         }
 
         return $response
-            . $this->cacheName
+            . 'N-' . $this->cacheName
             . ':'
             . $this->identifier;
     }
@@ -209,6 +214,6 @@ class CacheBuilder
             . $childCache
             . ':*';
 
-        return str_replace($this->group, '*', $key);
+        return str_replace('G-' . $this->group, '*', $key);
     }
 }

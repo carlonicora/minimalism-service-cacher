@@ -89,10 +89,12 @@ class Cacher extends AbstractService
     /**
      * @param CacheBuilder $builder
      * @param string $data
+     * @param int $cacheBuilderType
      * @throws RedisConnectionException
      */
-    public function save(CacheBuilder $builder, string $data): void
+    public function save(CacheBuilder $builder, string $data, int $cacheBuilderType): void
     {
+        $builder->setType($cacheBuilderType);
         $this->saveCache(
             $builder->getKey(),
             $data,
@@ -103,13 +105,14 @@ class Cacher extends AbstractService
     /**
      * @param CacheBuilder $builder
      * @param array $data
-     * @throws RedisConnectionException
+     * @param int $cacheBuilderType
      * @throws JsonException
+     * @throws RedisConnectionException
      */
-    public function saveArray(CacheBuilder $builder, array $data): void
+    public function saveArray(CacheBuilder $builder, array $data, int $cacheBuilderType): void
     {
         $jsonData = json_encode($data, JSON_THROW_ON_ERROR);
-        $this->save($builder, $jsonData);
+        $this->save($builder, $jsonData, $cacheBuilderType);
 
         if (
             array_key_exists(0, $data)
@@ -142,10 +145,12 @@ class Cacher extends AbstractService
 
     /**
      * @param CacheBuilder $builder
+     * @param int $cacheBuilderType
      * @return string|null
      */
-    public function read(CacheBuilder $builder): ?string
+    public function read(CacheBuilder $builder, int $cacheBuilderType): ?string
     {
+        $builder->setType($cacheBuilderType);
         try {
             return $this->redis->get($builder->getKey());
         } catch (RedisConnectionException|RedisKeyNotFoundException $e) {
@@ -155,10 +160,12 @@ class Cacher extends AbstractService
 
     /**
      * @param CacheBuilder $builder
+     * @param int $cacheBuilderType
      * @return array|null
      */
-    public function readArray(CacheBuilder $builder): ?array
+    public function readArray(CacheBuilder $builder, int $cacheBuilderType): ?array
     {
+        $builder->setType($cacheBuilderType);
         try {
             $jsonData = $this->redis->get($builder->getKey());
             return json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR);
@@ -183,8 +190,16 @@ class Cacher extends AbstractService
      */
     private function invalidateCache(CacheBuilder $builder, bool $firstRun): void
     {
+        if ($firstRun){
+            $cacheBuilderType = CacheBuilder::DATA;
+        } else {
+            $cacheBuilderType = CacheBuilder::JSON;
+        }
+
+        $builder->setType($cacheBuilderType);
+
         if ($builder->isList()){
-            if (($data = $this->readArray($builder)) !== null && array_key_exists(0, $data))
+            if (($data = $this->readArray($builder, $cacheBuilderType)) !== null && array_key_exists(0, $data))
             {
                 foreach($data as $child){
                     if (array_key_exists($builder->getListName(), $child)){
@@ -203,13 +218,14 @@ class Cacher extends AbstractService
                 $list = $this->redis->getKeys($childKey);
 
                 foreach ($list ?? [] as $child){
-                    $identifier = str_replace(substr($childKey, 0, -1), '', $child);
+                    [,$group,$type,,$identifier] = explode(':', $child);
+
                     $childBuilder = $this->factory->create(
-                        $builder->getType(),
-                        $builder->getGroup(),
                         $linkedCacheName,
                         $identifier
                     );
+                    $childBuilder->setType($type === 'DATA' ? CacheBuilder::DATA : CacheBuilder::JSON);
+                    $childBuilder->setGroup(substr($group, 2));
 
                     $this->invalidate($childBuilder);
                 }
@@ -221,12 +237,6 @@ class Cacher extends AbstractService
         $this->invalidateKey($builder->getKey());
 
         if ($firstRun) {
-            if ($builder->getType() === CacheBuilder::DATA) {
-                $builder->setType(CacheBuilder::JSON);
-            } else {
-                $builder->setType(CacheBuilder::DATA);
-            }
-
             $this->invalidateCache($builder, false);
         }
     }
