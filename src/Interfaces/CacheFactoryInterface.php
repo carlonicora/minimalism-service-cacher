@@ -1,10 +1,9 @@
 <?php
-namespace CarloNicora\Minimalism\Services\Cacher\Factories;
+namespace CarloNicora\Minimalism\Services\Cacher\Interfaces;
 
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
-use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheFactoryInterface;
 
-class CacheFactory implements CacheFactoryInterface
+interface CacheFactoryInterface
 {
     /**
      * @param string $cacheName
@@ -14,10 +13,7 @@ class CacheFactory implements CacheFactoryInterface
     public function create(
         string $cacheName,
         $identifier
-    ): CacheBuilder
-    {
-        return new CacheBuilder($cacheName, $identifier);
-    }
+    ): CacheBuilder;
 
     /**
      * @param string $listName
@@ -31,12 +27,5 @@ class CacheFactory implements CacheFactoryInterface
         string $cacheName,
         $identifier,
         bool $saveGranular=true
-    ): CacheBuilder
-    {
-        $response = $this->create($cacheName, $identifier);
-        $response->setListName($listName);
-        $response->setSaveGranular($saveGranular);
-
-        return $response;
-    }
+    ): CacheBuilder;
 }
