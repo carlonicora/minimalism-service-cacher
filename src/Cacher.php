@@ -218,16 +218,21 @@ class Cacher extends AbstractService
                 $list = $this->redis->getKeys($childKey);
 
                 foreach ($list ?? [] as $child){
-                    [,$group,$type,,$identifier] = explode(':', $child);
+                    [,,$type,,$identifier] = explode(':', $child);
 
                     $childBuilder = $this->factory->create(
                         $linkedCacheName,
                         $identifier
                     );
                     $childBuilder->setType($type === 'DATA' ? CacheBuilder::DATA : CacheBuilder::JSON);
-                    $childBuilder->setGroup(substr($group, 2));
+                    $childBuilder->setGroup('*');
 
-                    $this->invalidate($childBuilder);
+                    $parentList = $this->redis->getKeys($childBuilder->getKey());
+
+                    foreach ($parentList ?? [] as $parentKey){
+                        $parentBuilder = $this->factory->createFromKey($parentKey);
+                        $this->invalidate($parentBuilder);
+                    }
                 }
 
                 $this->invalidateKey($childKey);

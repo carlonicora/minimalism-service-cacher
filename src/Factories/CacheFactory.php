@@ -20,6 +20,20 @@ class CacheFactory implements CacheFactoryInterface
     }
 
     /**
+     * @param string $key
+     * @return CacheBuilder
+     */
+    public function createFromKey(
+        string $key
+    ): CacheBuilder
+    {
+        $response = new CacheBuilder('name', 'identifier');
+        $response->rebuildFromKey($key);
+
+        return $response;
+    }
+
+    /**
      * @param string $listName
      * @param string $cacheName
      * @param $identifier

@@ -40,6 +40,18 @@ class CacheBuilder
     }
 
     /**
+     * @param string $key
+     */
+    public function rebuildFromKey(string $key): void
+    {
+        [,$group,$type,$cacheName,$identifier] = explode(':', $key);
+        $this->group = substr($group, 2);
+        $this->type = (int)substr($type, 2);
+        $this->cacheName = substr($cacheName, 2);
+        $this->identifier = $identifier;
+    }
+
+    /**
      * @return int
      */
     public function getType(): int
@@ -220,11 +232,11 @@ class CacheBuilder
      */
     public function getChildKey(string $childCache): string
     {
-        $key = $this->getKey()
-            . ':'
+        $key = str_replace(['N-', 'G-' . $this->group], ['L-', '*'], $this->getKey());
+        $key .= ':N-'
             . $childCache
             . ':*';
 
-        return str_replace('G-' . $this->group, '*', $key);
+        return $key;
     }
 }
