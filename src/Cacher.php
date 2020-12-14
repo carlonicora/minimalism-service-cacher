@@ -180,78 +180,79 @@ class Cacher extends AbstractService
      */
     public function invalidate(CacheBuilder $builder): void
     {
-        $this->invalidateCache($builder, true);
-    }
-
-    /**
-     * @param CacheBuilder $builder
-     * @param bool $firstRun
-     * @throws RedisConnectionException
-     */
-    private function invalidateCache(CacheBuilder $builder, bool $firstRun): void
-    {
-        if ($firstRun){
-            $cacheBuilderType = CacheBuilder::DATA;
-        } else {
-            $cacheBuilderType = CacheBuilder::JSON;
-        }
-
-        $builder->setType($cacheBuilderType);
-
         if ($builder->isList()){
-            if (($data = $this->readArray($builder, $cacheBuilderType)) !== null && array_key_exists(0, $data))
-            {
-                foreach($data as $child){
-                    if (array_key_exists($builder->getListName(), $child)){
-                        $this->invalidateKey(
-                            $builder->getListItemKey(
-                                $child[$builder->getListName()]
-                            )
-                        );
-                    }
-                }
+            [
+                ,
+                $cacheGroupName,
+                $dependentCacheType,
+                $dependentCacheGroupName,
+                ,
+                $dependentCacheName,
+                $dependentCacheIdentifier
+            ] = explode(':', $builder->getKey());
+
+            $linkedCacheBuilder = $this->factory->createList(
+                substr($dependentCacheGroupName, 2),
+                substr($dependentCacheName, 2),
+                $dependentCacheIdentifier
+            );
+            $linkedCacheBuilder->setTypeFromString($dependentCacheType);
+            $linkedCacheBuilder->setGroup(substr($cacheGroupName, 2));
+            $linkedKeys = str_replace('null', '*', $linkedCacheBuilder->getKey());
+
+            if (($linkedCachessKeysList = $this->redis->getKeys($linkedKeys)) !== []){
+                $this->redis->remove($linkedCachessKeysList);
             }
-        } elseif (array_key_exists($builder->getCacheName(), $this->definitions) && is_array($this->definitions[$builder->getCacheName()])){
-            foreach ($this->definitions[$builder->getCacheName()] ?? [] as $linkedCacheName){
-                $childKey = $builder->getChildKey($linkedCacheName);
+        } else {
+            foreach ($this->definitions[$builder->getCacheName()] ?? [] as $dependentCacheName) {
+                $dependentKey = $builder->getChildKey($dependentCacheName);
 
-                $list = $this->redis->getKeys($childKey);
+                $dependentListCachesKeys = $this->redis->getKeys($dependentKey);
 
-                foreach ($list ?? [] as $child){
-                    [,,$type,,$identifier] = explode(':', $child);
-
-                    $childBuilder = $this->factory->create(
-                        $linkedCacheName,
-                        $identifier
+                /*
+                 * Deletes all the Cache Lists linked to the cache
+                 */
+                foreach ($dependentListCachesKeys ?? [] as $dependentListCacheKey) {
+                    [
+                        ,
+                        ,
+                        $dependentListCacheType,
+                        $dependentListCacheGroupName,
+                        ,
+                        $dependentListCacheName,
+                        $dependentListCacheIdentifier
+                    ] = explode(':', $dependentListCacheKey);
+                    $dependentListCacheBuilder = $this->factory->createList(
+                        substr($dependentListCacheGroupName, 2),
+                        substr($dependentListCacheName, 2),
+                        $dependentListCacheIdentifier
                     );
-                    $childBuilder->setType($type === 'DATA' ? CacheBuilder::DATA : CacheBuilder::JSON);
-                    $childBuilder->setGroup('*');
-
-                    $parentList = $this->redis->getKeys($childBuilder->getKey());
-
-                    foreach ($parentList ?? [] as $parentKey){
-                        $parentBuilder = $this->factory->createFromKey($parentKey);
-                        $this->invalidate($parentBuilder);
+                    $dependentListCacheBuilder->setType(CacheBuilder::ALL);
+                    $dependentListCacheBuilder->setGroup('*');
+                    
+                    $this->invalidate($dependentListCacheBuilder);
+                    
+                    if ($dependentListCacheBuilder->getType() !== CacheBuilder::DATA){
+                        $dependentCacheBuilder = $this->factory->create(
+                            substr($dependentListCacheName, 2),
+                            $dependentListCacheIdentifier
+                        );
+                        $dependentCacheBuilder->setTypeFromString($dependentListCacheType);
+                        $dependentCacheBuilder->setGroup('*');
+                        
+                        $this->invalidate($dependentCacheBuilder);
                     }
                 }
-
-                $this->invalidateKey($childKey);
             }
         }
 
-        $this->invalidateKey($builder->getKey());
-
-        if ($firstRun) {
-            $this->invalidateCache($builder, false);
+        if ($builder->getType() === CacheBuilder::DATA){
+             $builder->setType(CacheBuilder::ALL);
+             $keys = $this->redis->getKeys($builder->getKey());
+        } else {
+            $keys = $builder->getKey();
         }
-    }
 
-    /**
-     * @param string $key
-     * @throws RedisConnectionException
-     */
-    private function invalidateKey(string $key): void
-    {
-        $this->redis->remove($key);
+        $this->redis->remove($keys);
     }
 }

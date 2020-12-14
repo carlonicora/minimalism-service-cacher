@@ -3,6 +3,7 @@ namespace CarloNicora\Minimalism\Services\Cacher\Builders;
 
 class CacheBuilder
 {
+    public const ALL=0;
     public const DATA=1;
     public const JSON=2;
 
@@ -49,6 +50,24 @@ class CacheBuilder
         $this->type = (int)substr($type, 2);
         $this->cacheName = substr($cacheName, 2);
         $this->identifier = $identifier;
+    }
+
+    /**
+     * @param string $stringType
+     */
+    public function setTypeFromString(string $stringType): void
+    {
+        if (strpos($stringType, 'T-') !== false){
+            $stringType = substr($stringType, 2);
+        }
+
+        if ($stringType === '*'){
+            $this->type = self::ALL;
+        } elseif ($stringType === 'DATA'){
+            $this->type = self::DATA;
+        } else {
+            $this->type = self::JSON;
+        }
     }
 
     /**
@@ -179,10 +198,18 @@ class CacheBuilder
      */
     private function getBaseKey(): string
     {
+        if ($this->type === self::ALL){
+            $type = '*';
+        } elseif ($this->type === self::DATA){
+            $type = 'DATA';
+        } else {
+            $type = 'JSON';
+        }
+        
         return 'minimalism:'
             . 'G-' . $this->group
             . ':'
-            . 'T-' . ($this->type === self::DATA ? 'DATA' : 'JSON')
+            . 'T-' . $type
             . ':';
     }
 
