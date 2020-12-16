@@ -28,6 +28,9 @@ class CacheBuilder
     /** @var int|null  */
     private ?int $ttl=null;
 
+    /** @var bool  */
+    private bool $invalidateAllChildren=false;
+
     /**
      * CacheBuilder constructor.
      * @param string $cacheName
@@ -84,6 +87,35 @@ class CacheBuilder
     public function setType(int $type): void
     {
         $this->type = $type;
+    }
+
+    /**
+     * @return CacheBuilder
+     * @param int $type
+     */
+    public function withType(int $type): CacheBuilder
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function invalidateOnlyChildren(): CacheBuilder
+    {
+        $this->invalidateAllChildren = true;
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function shouldInvalidateAllChildren(): bool
+    {
+        return $this->invalidateAllChildren;
     }
 
     /**
@@ -265,5 +297,19 @@ class CacheBuilder
             . ':*';
 
         return $key;
+    }
+
+    /**
+     * @param string $childCacheName
+     * @return string
+     */
+    public function getChildrenKeys(string $childCacheName='*'): string
+    {
+        return 'minimalism:'
+            . 'G-*:'
+            . 'T-*:'
+            . 'L-' . $childCacheName . ':'
+            . 'N-' . $this->cacheName . ':'
+            . $this->identifier;
     }
 }

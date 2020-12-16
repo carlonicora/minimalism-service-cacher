@@ -181,68 +181,12 @@ class Cacher extends AbstractService
     public function invalidate(CacheBuilder $builder): void
     {
         if ($builder->isList()){
-            [
-                ,
-                $cacheGroupName,
-                $dependentCacheType,
-                $dependentCacheGroupName,
-                ,
-                $dependentCacheName,
-                $dependentCacheIdentifier
-            ] = explode(':', $builder->getKey());
-
-            $linkedCacheBuilder = $this->factory->createList(
-                substr($dependentCacheGroupName, 2),
-                substr($dependentCacheName, 2),
-                $dependentCacheIdentifier
-            );
-            $linkedCacheBuilder->setTypeFromString($dependentCacheType);
-            $linkedCacheBuilder->setGroup(substr($cacheGroupName, 2));
-            $linkedKeys = str_replace('null', '*', $linkedCacheBuilder->getKey());
-
-            if (($linkedCachessKeysList = $this->redis->getKeys($linkedKeys)) !== []){
-                $this->redis->remove($linkedCachessKeysList);
-            }
+            $this->invalidateList($builder->getKey());
+        } elseif ($builder->shouldInvalidateAllChildren()){
+            $this->invalidateChildren($builder->getChildrenKeys());
         } else {
             foreach ($this->definitions[$builder->getCacheName()] ?? [] as $dependentCacheName) {
-                $dependentKey = $builder->getChildKey($dependentCacheName);
-
-                $dependentListCachesKeys = $this->redis->getKeys($dependentKey);
-
-                /*
-                 * Deletes all the Cache Lists linked to the cache
-                 */
-                foreach ($dependentListCachesKeys ?? [] as $dependentListCacheKey) {
-                    [
-                        ,
-                        ,
-                        $dependentListCacheType,
-                        $dependentListCacheGroupName,
-                        ,
-                        $dependentListCacheName,
-                        $dependentListCacheIdentifier
-                    ] = explode(':', $dependentListCacheKey);
-                    $dependentListCacheBuilder = $this->factory->createList(
-                        substr($dependentListCacheGroupName, 2),
-                        substr($dependentListCacheName, 2),
-                        $dependentListCacheIdentifier
-                    );
-                    $dependentListCacheBuilder->setType(CacheBuilder::ALL);
-                    $dependentListCacheBuilder->setGroup('*');
-                    
-                    $this->invalidate($dependentListCacheBuilder);
-                    
-                    if ($dependentListCacheBuilder->getType() !== CacheBuilder::DATA){
-                        $dependentCacheBuilder = $this->factory->create(
-                            substr($dependentListCacheName, 2),
-                            $dependentListCacheIdentifier
-                        );
-                        $dependentCacheBuilder->setTypeFromString($dependentListCacheType);
-                        $dependentCacheBuilder->setGroup('*');
-                        
-                        $this->invalidate($dependentCacheBuilder);
-                    }
-                }
+                $this->invalidateDependents($builder->getChildKey($dependentCacheName));
             }
         }
 
@@ -254,5 +198,110 @@ class Cacher extends AbstractService
         }
 
         $this->redis->remove($keys);
+    }
+
+    /**
+     * @param string $keysPattern
+     * @throws RedisConnectionException
+     */
+    private function invalidateChildren(string $keysPattern): void
+    {
+        $childrenKeys = $this->redis->getKeys($keysPattern);
+
+        foreach ($childrenKeys as $childKey){
+            [
+                ,
+                ,
+                ,
+                $childListCacheGroupName,
+                $childIdentifier
+            ] = explode(':', $childKey);
+
+            if ($childIdentifier !== 'null'){
+                $childCacheBuilder = new CacheBuilder(
+                    substr($childListCacheGroupName, 2),
+                    $childIdentifier
+                );
+                $childCacheBuilder->setType(CacheBuilder::ALL);
+
+                $this->invalidate($childCacheBuilder);
+            }
+        }
+
+        $this->redis->remove($childrenKeys);
+    }
+
+    /**
+     * @param string $dependentKey
+     * @throws RedisConnectionException
+     */
+    private function invalidateDependents(string $dependentKey): void
+    {
+        $dependentListCachesKeys = $this->redis->getKeys($dependentKey);
+
+        /*
+         * Deletes all the Cache Lists linked to the cache
+         */
+        foreach ($dependentListCachesKeys ?? [] as $dependentListCacheKey) {
+            [
+                ,
+                ,
+                $dependentListCacheType,
+                $dependentListCacheGroupName,
+                ,
+                $dependentListCacheName,
+                $dependentListCacheIdentifier
+            ] = explode(':', $dependentListCacheKey);
+            $dependentListCacheBuilder = $this->factory->createList(
+                substr($dependentListCacheGroupName, 2),
+                substr($dependentListCacheName, 2),
+                $dependentListCacheIdentifier
+            );
+            $dependentListCacheBuilder->setType(CacheBuilder::ALL);
+            $dependentListCacheBuilder->setGroup('*');
+
+            $this->invalidate($dependentListCacheBuilder);
+
+            if ($dependentListCacheBuilder->getType() !== CacheBuilder::DATA){
+                $dependentCacheBuilder = $this->factory->create(
+                    substr($dependentListCacheName, 2),
+                    $dependentListCacheIdentifier
+                );
+                $dependentCacheBuilder->setTypeFromString($dependentListCacheType);
+                $dependentCacheBuilder->setGroup('*');
+
+                $this->invalidate($dependentCacheBuilder);
+            }
+        }
+    }
+
+    /**
+     * @param string $key
+     * @throws RedisConnectionException
+     */
+    private function invalidateList(string $key): void
+    {
+        [
+            ,
+            $cacheGroupName,
+            $dependentCacheType,
+            $dependentCacheGroupName,
+            ,
+            $dependentCacheName,
+            $dependentCacheIdentifier
+        ] = explode(':', $key);
+
+        $linkedCacheBuilder = $this->factory->createList(
+            substr($dependentCacheGroupName, 2),
+            substr($dependentCacheName, 2),
+            $dependentCacheIdentifier
+        );
+        $linkedCacheBuilder->setTypeFromString($dependentCacheType);
+        $linkedCacheBuilder->setGroup(substr($cacheGroupName, 2));
+        $linkedKeys = str_replace('null', '*', $linkedCacheBuilder->getKey());
+
+        if (($linkedCachessKeysList = $this->redis->getKeys($linkedKeys)) !== []){
+            $this->redis->remove($linkedCachessKeysList);
+        }
     }
 }
