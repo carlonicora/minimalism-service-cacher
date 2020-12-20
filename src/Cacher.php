@@ -7,7 +7,7 @@ use CarloNicora\Minimalism\Core\Services\Factories\ServicesFactory;
 use CarloNicora\Minimalism\Core\Services\Interfaces\ServiceConfigurationsInterface;
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
 use CarloNicora\Minimalism\Services\Cacher\Configurations\CacheConfigurations;
-use CarloNicora\Minimalism\Services\Cacher\Factories\CacheFactory;
+use CarloNicora\Minimalism\Services\Cacher\Factories\CacheBuilderFactory;
 use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisConnectionException;
 use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisKeyNotFoundException;
 use CarloNicora\Minimalism\Services\Redis\Redis;
@@ -25,8 +25,8 @@ class Cacher extends AbstractService
     /** @var array  */
     private array $definitions=[];
 
-    /** @var CacheFactory  */
-    private CacheFactory $factory;
+    /** @var CacheBuilderFactory  */
+    private CacheBuilderFactory $factory;
 
     /**
      * poser constructor.
@@ -44,13 +44,13 @@ class Cacher extends AbstractService
 
         $this->redis = $services->service(Redis::class);
 
-        $this->factory = new CacheFactory();
+        $this->factory = new CacheBuilderFactory();
     }
 
     /**
-     * @return CacheFactory
+     * @return CacheBuilderFactory
      */
-    public function getFactory(): CacheFactory
+    public function getFactory(): CacheBuilderFactory
     {
         return $this->factory;
     }
@@ -182,17 +182,17 @@ class Cacher extends AbstractService
     {
         if ($builder->isList()){
             $this->invalidateList($builder->getKey());
-        } elseif ($builder->shouldInvalidateAllChildren()){
-            $this->invalidateChildren($builder->getChildrenKeys());
+        } elseif ($builder->getShouldInvalidateAllChildren()){
+            $this->invalidateChildren($builder->getChildrenKeysPattern());
         } else {
             foreach ($this->definitions[$builder->getCacheName()] ?? [] as $dependentCacheName) {
-                $this->invalidateDependents($builder->getChildKey($dependentCacheName));
+                $this->invalidateDependents($builder->getChildKeysPattern($dependentCacheName));
             }
         }
 
         if ($builder->getType() === CacheBuilder::DATA){
              $builder->setType(CacheBuilder::ALL);
-             $keys = $this->redis->getKeys($builder->getKey());
+             $keys = $this->redis->getKeys($builder->getKeyPattern());
         } else {
             $keys = $builder->getKey();
         }
@@ -209,19 +209,9 @@ class Cacher extends AbstractService
         $childrenKeys = $this->redis->getKeys($keysPattern);
 
         foreach ($childrenKeys as $childKey){
-            [
-                ,
-                ,
-                ,
-                $childListCacheGroupName,
-                $childIdentifier
-            ] = explode(':', $childKey);
-
-            if ($childIdentifier !== 'null'){
-                $childCacheBuilder = new CacheBuilder(
-                    substr($childListCacheGroupName, 2),
-                    $childIdentifier
-                );
+            $childCacheBuilder = $this->factory->createFromKey($childKey);
+            if ($childCacheBuilder->getCacheIdentifier() !== null){
+                $childCacheBuilder->clearContexts();
                 $childCacheBuilder->setType(CacheBuilder::ALL);
 
                 $this->invalidate($childCacheBuilder);
@@ -243,32 +233,21 @@ class Cacher extends AbstractService
          * Deletes all the Cache Lists linked to the cache
          */
         foreach ($dependentListCachesKeys ?? [] as $dependentListCacheKey) {
-            [
-                ,
-                ,
-                $dependentListCacheType,
-                $dependentListCacheGroupName,
-                ,
-                $dependentListCacheName,
-                $dependentListCacheIdentifier
-            ] = explode(':', $dependentListCacheKey);
+            $dependentCacheBuilderInitiator = $this->factory->createFromKey($dependentListCacheKey);
             $dependentListCacheBuilder = $this->factory->createList(
-                substr($dependentListCacheGroupName, 2),
-                substr($dependentListCacheName, 2),
-                $dependentListCacheIdentifier
+                $dependentCacheBuilderInitiator->getListName(),
+                $dependentCacheBuilderInitiator->getCacheName(),
+                $dependentCacheBuilderInitiator->getCacheIdentifier()
+            )->withType(
+                CacheBuilder::ALL
             );
-            $dependentListCacheBuilder->setType(CacheBuilder::ALL);
-            $dependentListCacheBuilder->setGroup('*');
-
             $this->invalidate($dependentListCacheBuilder);
 
-            if ($dependentListCacheBuilder->getType() !== CacheBuilder::DATA){
+            if ($dependentCacheBuilderInitiator->getType() !== CacheBuilder::DATA){
                 $dependentCacheBuilder = $this->factory->create(
-                    substr($dependentListCacheName, 2),
-                    $dependentListCacheIdentifier
-                );
-                $dependentCacheBuilder->setTypeFromString($dependentListCacheType);
-                $dependentCacheBuilder->setGroup('*');
+                    $dependentCacheBuilderInitiator->getCacheName(),
+                    $dependentCacheBuilderInitiator->getCacheIdentifier()
+                )->withType($dependentCacheBuilderInitiator->getType());
 
                 $this->invalidate($dependentCacheBuilder);
             }
@@ -281,26 +260,19 @@ class Cacher extends AbstractService
      */
     private function invalidateList(string $key): void
     {
-        [
-            ,
-            $cacheGroupName,
-            $dependentCacheType,
-            $dependentCacheGroupName,
-            ,
-            $dependentCacheName,
-            $dependentCacheIdentifier
-        ] = explode(':', $key);
+        $linkedCacheBuilderInitiator = $this->factory->createFromKey($key);
 
         $linkedCacheBuilder = $this->factory->createList(
-            substr($dependentCacheGroupName, 2),
-            substr($dependentCacheName, 2),
-            $dependentCacheIdentifier
+            $linkedCacheBuilderInitiator->getListName(),
+            $linkedCacheBuilderInitiator->getCacheName(),
+            $linkedCacheBuilderInitiator->getCacheIdentifier()
+        )->withType(
+            $linkedCacheBuilderInitiator->getType()
+        )->withContexts(
+            $linkedCacheBuilderInitiator->getContexts()
         );
-        $linkedCacheBuilder->setTypeFromString($dependentCacheType);
-        $linkedCacheBuilder->setGroup(substr($cacheGroupName, 2));
-        $linkedKeys = str_replace('null', '*', $linkedCacheBuilder->getKey());
 
-        if (($linkedCachessKeysList = $this->redis->getKeys($linkedKeys)) !== []){
+        if (($linkedCachessKeysList = $this->redis->getKeys($linkedCacheBuilder->getKey())) !== []){
             $this->redis->remove($linkedCachessKeysList);
         }
     }

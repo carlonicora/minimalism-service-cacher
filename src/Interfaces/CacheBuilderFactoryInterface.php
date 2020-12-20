@@ -3,8 +3,9 @@ namespace CarloNicora\Minimalism\Services\Cacher\Interfaces;
 
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
 
-interface CacheFactoryInterface
+interface CacheBuilderFactoryInterface
 {
+
     /**
      * @param string $cacheName
      * @param $identifier
@@ -13,6 +14,14 @@ interface CacheFactoryInterface
     public function create(
         string $cacheName,
         $identifier
+    ): CacheBuilder;
+
+    /**
+     * @param string $key
+     * @return CacheBuilder
+     */
+    public function createFromKey(
+        string $key
     ): CacheBuilder;
 
     /**

@@ -1,6 +1,10 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Builders;
 
+use CarloNicora\Minimalism\Services\Cacher\Commands\CacheIdentificatorCommand;
+use CarloNicora\Minimalism\Services\Cacher\Interpreters\CacheKeyInterpreter;
+use CarloNicora\Minimalism\Services\Cacher\Iterators\CacheIdentificatorsIterator;
+
 class CacheBuilder
 {
     public const ALL=0;
@@ -10,17 +14,17 @@ class CacheBuilder
     /** @var int  */
     private int $type=self::DATA;
 
-    /** @var string  */
-    private string $group;
+    /** @var CacheIdentificatorCommand|null  */
+    private ?CacheIdentificatorCommand $cacheIdentifier=null;
 
-    /** @var string  */
-    private string $cacheName;
+    /** @var CacheIdentificatorCommand|null  */
+    private ?CacheIdentificatorCommand $list=null;
 
-    /** @var mixed */
-    private $identifier;
+    /** @var CacheIdentificatorsIterator  */
+    private CacheIdentificatorsIterator $contexts;
 
-    /** @var string|null  */
-    private ?string $listName=null;
+    /** @var CacheKeyInterpreter  */
+    private CacheKeyInterpreter $interpreter;
 
     /** @var bool  */
     private bool $saveGranular=true;
@@ -31,71 +35,104 @@ class CacheBuilder
     /** @var bool  */
     private bool $invalidateAllChildren=false;
 
+    /** @var bool  */
+    private bool $forceContextOnChildren=false;
+
     /**
      * CacheBuilder constructor.
-     * @param string $cacheName
-     * @param $identifier
      */
-    public function __construct(string $cacheName, $identifier)
+    public function __construct()
     {
-        $this->group = $cacheName;
-        $this->cacheName = $cacheName;
-        $this->identifier = $identifier;
+        $this->contexts = new CacheIdentificatorsIterator();
+        $this->interpreter = new CacheKeyInterpreter();
     }
 
     /**
-     * @param string $key
-     */
-    public function rebuildFromKey(string $key): void
-    {
-        [,$group,$type,$cacheName,$identifier] = explode(':', $key);
-        $this->group = substr($group, 2);
-        $this->type = (int)substr($type, 2);
-        $this->cacheName = substr($cacheName, 2);
-        $this->identifier = $identifier;
-    }
-
-    /**
-     * @param string $stringType
-     */
-    public function setTypeFromString(string $stringType): void
-    {
-        if (strpos($stringType, 'T-') !== false){
-            $stringType = substr($stringType, 2);
-        }
-
-        if ($stringType === '*'){
-            $this->type = self::ALL;
-        } elseif ($stringType === 'DATA'){
-            $this->type = self::DATA;
-        } else {
-            $this->type = self::JSON;
-        }
-    }
-
-    /**
-     * @return int
-     */
-    public function getType(): int
-    {
-        return $this->type;
-    }
-
-    /**
-     * @param int $type
-     */
-    public function setType(int $type): void
-    {
-        $this->type = $type;
-    }
-
-    /**
+     * @param int $ttl
      * @return CacheBuilder
+     */
+    public function withTtl(int $ttl): CacheBuilder
+    {
+        $this->ttl = $ttl;
+
+        return $this;
+    }
+
+    /**
+     * @param string $listName
+     * @return CacheBuilder
+     */
+    public function withList(string $listName): CacheBuilder
+    {
+        $this->list = new CacheIdentificatorCommand($listName);
+
+        return $this;
+    }
+
+    /**
      * @param int $type
+     * @return $this
      */
     public function withType(int $type): CacheBuilder
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * @param bool $saveGranular
+     * @return CacheBuilder
+     */
+    public function withGranularSaveOfChildren(bool $saveGranular): CacheBuilder
+    {
+        $this->saveGranular = $saveGranular;
+
+        return $this;
+    }
+
+    /**
+     * @param CacheIdentificatorsIterator $context
+     * @return $this
+     */
+    public function withContexts(CacheIdentificatorsIterator $context): CacheBuilder
+    {
+        $this->contexts = $context;
+
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @param mixed $identifier
+     * @return CacheBuilder
+     */
+    public function addContext(string $name, $identifier=null): CacheBuilder
+    {
+        $this->contexts->addCacheIdentificator(
+            new CacheIdentificatorCommand(
+                $name,
+                $identifier
+            )
+        );
+
+        return $this;
+    }
+
+    /**
+     *
+     */
+    public function clearContexts(): void
+    {
+        $this->contexts = new CacheIdentificatorsIterator();
+    }
+
+    /**
+     * @return $this
+     */
+    public function forcingContextsOnGranularChildren(): CacheBuilder
+    {
+        $this->forceContextOnChildren = true;
 
         return $this;
     }
@@ -111,38 +148,93 @@ class CacheBuilder
     }
 
     /**
-     * @return bool
+     * @param CacheIdentificatorCommand $cacheIdentifier
      */
-    public function shouldInvalidateAllChildren(): bool
+    public function setCacheIdentifier(CacheIdentificatorCommand $cacheIdentifier): void
     {
-        return $this->invalidateAllChildren;
+        $this->cacheIdentifier = $cacheIdentifier;
+    }
+
+    /**
+     * @param string $stringType
+     */
+    public function setTypeFromString(string $stringType): void
+    {
+        if ($stringType === 'ALL'){
+            $this->type = self::ALL;
+        } elseif ($stringType === 'DATA'){
+            $this->type = self::DATA;
+        } else {
+            $this->type = self::JSON;
+        }
+    }
+
+    /**
+     * @param int $type
+     */
+    public function setType(int $type): void
+    {
+        $this->type = $type;
+    }
+
+    /**
+     * @param int|null $ttl
+     */
+    public function setTtl(?int $ttl): void
+    {
+        $this->ttl = $ttl;
+    }
+
+    /**
+     * @param string|null $listName
+     */
+    public function setListName(?string $listName): void
+    {
+        if ($this->list === null){
+            $this->list = new CacheIdentificatorCommand($listName);
+        } else {
+            $this->list->setName($listName);
+        }
+    }
+
+    /**
+     * @param CacheIdentificatorsIterator $contexts
+     */
+    public function setContexts(CacheIdentificatorsIterator $contexts): void
+    {
+        $this->contexts = $contexts;
+    }
+
+    /**
+     * @return int
+     */
+    public function getType(): int
+    {
+        return $this->type;
     }
 
     /**
      * @return string
      */
-    public function getGroup(): string
+    public function getCacheName(): string
     {
-        return $this->group;
+        return $this->cacheIdentifier->getName();
     }
 
     /**
-     * @param string $group
+     * @return mixed|null
      */
-    public function setGroup(string $group): void
+    public function getCacheIdentifier()
     {
-        $this->group = $group;
+        return $this->cacheIdentifier->getIdentifier();
     }
 
     /**
-     * @param string $group
-     * @return $this
+     * @return bool
      */
-    public function withGroup(string $group): CacheBuilder
+    public function getShouldInvalidateAllChildren(): bool
     {
-        $this->group = $group;
-
-        return $this;
+        return $this->invalidateAllChildren;
     }
 
     /**
@@ -154,43 +246,11 @@ class CacheBuilder
     }
 
     /**
-     * @param int $ttl
-     */
-    public function setTtl(int $ttl): void
-    {
-        $this->ttl = $ttl;
-    }
-
-    /**
      * @return bool
      */
     public function isList(): bool
     {
-        return $this->listName !== null;
-    }
-
-    /**
-     * @return string
-     */
-    public function getCacheName(): string
-    {
-        return $this->cacheName;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getIdentifier()
-    {
-        return $this->identifier;
-    }
-
-    /**
-     * @param mixed $identifier
-     */
-    public function setIdentifier($identifier): void
-    {
-        $this->identifier = $identifier;
+        return $this->list !== null;
     }
 
     /**
@@ -198,23 +258,7 @@ class CacheBuilder
      */
     public function getListName(): ?string
     {
-        return $this->listName;
-    }
-
-    /**
-     * @param string|null $listName
-     */
-    public function setListName(?string $listName): void
-    {
-        $this->listName = $listName;
-    }
-
-    /**
-     * @param bool $saveGranular
-     */
-    public function setSaveGranular(bool $saveGranular): void
-    {
-        $this->saveGranular = $saveGranular;
+        return $this->list === null ? null : $this->list->getName();
     }
 
     /**
@@ -226,23 +270,11 @@ class CacheBuilder
     }
 
     /**
-     * @return string
+     * @return CacheIdentificatorsIterator
      */
-    private function getBaseKey(): string
+    public function getContexts(): CacheIdentificatorsIterator
     {
-        if ($this->type === self::ALL){
-            $type = '*';
-        } elseif ($this->type === self::DATA){
-            $type = 'DATA';
-        } else {
-            $type = 'JSON';
-        }
-        
-        return 'minimalism:'
-            . 'G-' . $this->group
-            . ':'
-            . 'T-' . $type
-            . ':';
+        return $this->contexts;
     }
 
     /**
@@ -250,17 +282,23 @@ class CacheBuilder
      */
     public function getKey(): string
     {
-        $response = $this->getBaseKey();
+        return 'minimalism'
+            . $this->interpreter->getTypePart($this->type)
+            . $this->interpreter->getListKeyPart($this->list)
+            . $this->interpreter->getCacheIdentificatorPart($this->cacheIdentifier)
+            . $this->interpreter->getCacheContextPart($this->contexts);
+    }
 
-        if ($this->listName !== null){
-            $response .= 'L-' . $this->listName
-            . ':null:';
-        }
-
-        return $response
-            . 'N-' . $this->cacheName
-            . ':'
-            . $this->identifier;
+    /**
+     * @return string
+     */
+    public function getKeyPattern(): string
+    {
+        return 'minimalism'
+            . $this->interpreter->getAllTypesPart()
+            . $this->interpreter->getAllListsKeyPart()
+            . $this->interpreter->getCacheIdentificatorPart($this->cacheIdentifier)
+            . $this->interpreter->getCacheContextPart($this->contexts);
     }
 
     /**
@@ -269,8 +307,11 @@ class CacheBuilder
      */
     public function getListItemKey($identifier): string
     {
-        $respose = $this->getKey();
-        return str_replace('null', $identifier, $respose);
+        return 'minimalism'
+        . $this->interpreter->getTypePart($this->type)
+        . $this->interpreter->getCacheIdentificatorPart($this->cacheIdentifier)
+        . $this->interpreter->getCacheIdentificatorPartForAlternateIdentificator($this->list, $identifier)
+        . $this->interpreter->getCacheContextPart($this->contexts);
     }
 
     /**
@@ -279,37 +320,46 @@ class CacheBuilder
      */
     public function getGranularKey($identifier): string
     {
-        return $this->getBaseKey()
-            . $this->listName
-            . ':'
-            . $identifier;
-    }
+        $newCacheIdentifier = new CacheIdentificatorCommand($this->list->getName(), $identifier);
 
-    /**
-     * @param string $childCache
-     * @return string
-     */
-    public function getChildKey(string $childCache): string
-    {
-        $key = str_replace(['N-', 'G-' . $this->group], ['L-', '*'], $this->getKey());
-        $key .= ':N-'
-            . $childCache
-            . ':*';
+        if ($this->forceContextOnChildren) {
+            return 'minimalism'
+                . $this->interpreter->getTypePart($this->type)
+                . $this->interpreter->getListKeyPart(null)
+                . $this->interpreter->getCacheIdentificatorPart($newCacheIdentifier)
+                . $this->interpreter->getCacheContextPart($this->contexts);
+        }
 
-        return $key;
+        return 'minimalism'
+            . $this->interpreter->getTypePart($this->type)
+            . $this->interpreter->getListKeyPart(null)
+            . $this->interpreter->getCacheIdentificatorPart($newCacheIdentifier);
     }
 
     /**
      * @param string $childCacheName
      * @return string
      */
-    public function getChildrenKeys(string $childCacheName='*'): string
+    public function getChildKeysPattern(string $childCacheName): string
     {
-        return 'minimalism:'
-            . 'G-*:'
-            . 'T-*:'
-            . 'L-' . $childCacheName . ':'
-            . 'N-' . $this->cacheName . ':'
-            . $this->identifier;
+        $newCacheIdentificator = new CacheIdentificatorCommand($childCacheName);
+
+        return 'minimalism'
+            . $this->interpreter->getTypePart($this->type)
+            . $this->interpreter->getListKeyPart($this->cacheIdentifier)
+            . $this->interpreter->getAllCacheIdentificatorParts($newCacheIdentificator)
+            . $this->interpreter->getCacheAllContextParts();
+    }
+
+    /**
+     * @return string
+     */
+    public function getChildrenKeysPattern(): string
+    {
+        return 'minimalism'
+            . $this->interpreter->getAllTypesPart()
+            . $this->interpreter->getAllListsKeyPart()
+            . $this->interpreter->getCacheIdentificatorPart($this->cacheIdentifier)
+            . $this->interpreter->getCacheContextPart($this->contexts);
     }
 }
