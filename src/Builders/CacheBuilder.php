@@ -1,11 +1,12 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Builders;
 
+use CarloNicora\Minimalism\Interfaces\CacheBuilderInterface;
 use CarloNicora\Minimalism\Services\Cacher\Commands\CacheIdentificatorCommand;
 use CarloNicora\Minimalism\Services\Cacher\Interpreters\CacheKeyInterpreter;
 use CarloNicora\Minimalism\Services\Cacher\Iterators\CacheIdentificatorsIterator;
 
-class CacheBuilder
+class CacheBuilder implements CacheBuilderInterface
 {
     public const ALL=0;
     public const DATA=1;

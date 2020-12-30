@@ -1,6 +1,8 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher;
 
+use CarloNicora\Minimalism\Interfaces\CacheBuilderInterface;
+use CarloNicora\Minimalism\Interfaces\CacheInterface;
 use CarloNicora\Minimalism\Interfaces\ServiceInterface;
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
 use CarloNicora\Minimalism\Services\Cacher\Factories\CacheBuilderFactory;
@@ -9,7 +11,7 @@ use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisKeyNotFoundException;
 use CarloNicora\Minimalism\Services\Redis\Redis;
 use JsonException;
 
-class Cacher implements ServiceInterface
+class Cacher implements ServiceInterface, CacheInterface
 {
     /** @var array  */
     private array $definitions=[];
@@ -71,12 +73,12 @@ class Cacher implements ServiceInterface
     }
 
     /**
-     * @param CacheBuilder $builder
+     * @param CacheBuilderInterface $builder
      * @param string $data
      * @param int $cacheBuilderType
      * @throws RedisConnectionException
      */
-    public function save(CacheBuilder $builder, string $data, int $cacheBuilderType): void
+    public function save(CacheBuilderInterface $builder, string $data, int $cacheBuilderType): void
     {
         $builder->setType($cacheBuilderType);
         $this->saveCache(
@@ -87,13 +89,13 @@ class Cacher implements ServiceInterface
     }
 
     /**
-     * @param CacheBuilder $builder
+     * @param CacheBuilderInterface $builder
      * @param array $data
      * @param int $cacheBuilderType
      * @throws JsonException
      * @throws RedisConnectionException
      */
-    public function saveArray(CacheBuilder $builder, array $data, int $cacheBuilderType): void
+    public function saveArray(CacheBuilderInterface $builder, array $data, int $cacheBuilderType): void
     {
         $jsonData = json_encode($data, JSON_THROW_ON_ERROR);
         $this->save($builder, $jsonData, $cacheBuilderType);
@@ -128,11 +130,11 @@ class Cacher implements ServiceInterface
     }
 
     /**
-     * @param CacheBuilder $builder
+     * @param CacheBuilderInterface $builder
      * @param int $cacheBuilderType
      * @return string|null
      */
-    public function read(CacheBuilder $builder, int $cacheBuilderType): ?string
+    public function read(CacheBuilderInterface $builder, int $cacheBuilderType): ?string
     {
         $builder->setType($cacheBuilderType);
         try {
@@ -143,11 +145,11 @@ class Cacher implements ServiceInterface
     }
 
     /**
-     * @param CacheBuilder $builder
+     * @param CacheBuilderInterface $builder
      * @param int $cacheBuilderType
      * @return array|null
      */
-    public function readArray(CacheBuilder $builder, int $cacheBuilderType): ?array
+    public function readArray(CacheBuilderInterface $builder, int $cacheBuilderType): ?array
     {
         $builder->setType($cacheBuilderType);
         try {
@@ -159,10 +161,10 @@ class Cacher implements ServiceInterface
     }
 
     /**
-     * @param CacheBuilder $builder
+     * @param CacheBuilderInterface $builder
      * @throws RedisConnectionException
      */
-    public function invalidate(CacheBuilder $builder): void
+    public function invalidate(CacheBuilderInterface $builder): void
     {
         if ($builder->isList()){
             $this->invalidateList($builder->getKey());
