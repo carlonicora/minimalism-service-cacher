@@ -1,27 +1,16 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher;
 
-use CarloNicora\Minimalism\Core\Services\Abstracts\AbstractService;
-use CarloNicora\Minimalism\Core\Services\Exceptions\ServiceNotFoundException;
-use CarloNicora\Minimalism\Core\Services\Factories\ServicesFactory;
-use CarloNicora\Minimalism\Core\Services\Interfaces\ServiceConfigurationsInterface;
+use CarloNicora\Minimalism\Interfaces\ServiceInterface;
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
-use CarloNicora\Minimalism\Services\Cacher\Configurations\CacheConfigurations;
 use CarloNicora\Minimalism\Services\Cacher\Factories\CacheBuilderFactory;
 use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisConnectionException;
 use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisKeyNotFoundException;
 use CarloNicora\Minimalism\Services\Redis\Redis;
-use Exception;
 use JsonException;
 
-class Cacher extends AbstractService
+class Cacher implements ServiceInterface
 {
-    /** @var CacheConfigurations  */
-    public CacheConfigurations $configData;
-
-    /** @var Redis */
-    protected Redis $redis;
-
     /** @var array  */
     private array $definitions=[];
 
@@ -30,19 +19,14 @@ class Cacher extends AbstractService
 
     /**
      * poser constructor.
-     * @param ServiceConfigurationsInterface $configData
-     * @param ServicesFactory $services
-     * @throws ServiceNotFoundException
-     * @throws Exception
+     * @param Redis $redis
+     * @param bool|null $MINIMALISM_SERVICE_CACHER_USE
      */
-    public function __construct(ServiceConfigurationsInterface $configData, ServicesFactory $services)
+    public function __construct(private Redis $redis, private ?bool $MINIMALISM_SERVICE_CACHER_USE=null)
     {
-        parent::__construct($configData, $services);
-
-        /** @noinspection PhpFieldAssignmentTypeMismatchInspection */
-        $this->configData = $configData;
-
-        $this->redis = $services->service(Redis::class);
+        if ($this->MINIMALISM_SERVICE_CACHER_USE === null){
+            $this->MINIMALISM_SERVICE_CACHER_USE = false;
+        }
 
         $this->factory = new CacheBuilderFactory();
     }
@@ -68,7 +52,7 @@ class Cacher extends AbstractService
      */
     public function useCaching() : bool
     {
-        return $this->configData->getUseCache();
+        return $this->MINIMALISM_SERVICE_CACHER_USE ?? false;
     }
 
     /**
@@ -153,7 +137,7 @@ class Cacher extends AbstractService
         $builder->setType($cacheBuilderType);
         try {
             return $this->redis->get($builder->getKey());
-        } catch (RedisConnectionException|RedisKeyNotFoundException $e) {
+        } catch (RedisConnectionException|RedisKeyNotFoundException) {
             return null;
         }
     }
@@ -169,7 +153,7 @@ class Cacher extends AbstractService
         try {
             $jsonData = $this->redis->get($builder->getKey());
             return json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR);
-        } catch (RedisConnectionException|RedisKeyNotFoundException|JsonException $e) {
+        } catch (RedisConnectionException|RedisKeyNotFoundException|JsonException) {
             return null;
         }
     }
@@ -276,4 +260,14 @@ class Cacher extends AbstractService
             $this->redis->remove($linkedCachessKeysList);
         }
     }
+
+    /**
+     *
+     */
+    public function initialise(): void {}
+
+    /**
+     *
+     */
+    public function destroy(): void {}
 }

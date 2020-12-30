@@ -78,10 +78,10 @@ class CacheKeyInterpreter
 
     /**
      * @param CacheIdentificatorCommand $cacheIdentificator
-     * @param mixed $alternateIdentificator
+     * @param int|string $alternateIdentificator
      * @return string
      */
-    public function getCacheIdentificatorPartForAlternateIdentificator(CacheIdentificatorCommand $cacheIdentificator, $alternateIdentificator): string
+    public function getCacheIdentificatorPartForAlternateIdentificator(CacheIdentificatorCommand $cacheIdentificator, int|string $alternateIdentificator): string
     {
         return ':'
             . $cacheIdentificator->getName()

@@ -18,7 +18,7 @@ class CacheIdentificatorsIterator
     }
 
     /**
-     * @return array|CacheIdentificatorCommand[]
+     * @return array
      */
     public function getCacheIdentificators(): array
     {

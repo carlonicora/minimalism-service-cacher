@@ -8,10 +8,10 @@ class CacheIdentificatorFactory
 {
     /**
      * @param string $name
-     * @param mixed $identifier
+     * @param int|string $identifier
      * @return CacheIdentificatorCommand
      */
-    public function fromNameIdentifier(string $name, $identifier): CacheIdentificatorCommand
+    public function fromNameIdentifier(string $name, int|string $identifier): CacheIdentificatorCommand
     {
         return new CacheIdentificatorCommand($name, $identifier);
     }

@@ -29,9 +29,9 @@ class CacheIdentificatorCommand
     }
 
     /**
-     * @return mixed
+     * @return int|string|null
      */
-    public function getIdentifier()
+    public function getIdentifier(): int|string|null
     {
         return $this->identifier;
     }
@@ -45,9 +45,9 @@ class CacheIdentificatorCommand
     }
 
     /**
-     * @param mixed $identifier
+     * @param int|string $identifier
      */
-    public function setIdentifier($identifier): void
+    public function setIdentifier(int|string $identifier): void
     {
         $this->identifier = $identifier;
     }

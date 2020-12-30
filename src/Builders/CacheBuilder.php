@@ -222,9 +222,9 @@ class CacheBuilder
     }
 
     /**
-     * @return mixed|null
+     * @return int|string|null
      */
-    public function getCacheIdentifier()
+    public function getCacheIdentifier(): int|string|null
     {
         return $this->cacheIdentifier->getIdentifier();
     }

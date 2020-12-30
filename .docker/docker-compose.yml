@@ -3,17 +3,13 @@ version: '3.8'
 services:
   minimalism-service-cacher:
     container_name: minimalism-service-cacher
-    image: carlonicora/minimalism-service-cacher:2.0.0
+    image: carlonicora/minimalism-service-cacher:3.0
     build:
       context: .
       dockerfile: ./php-cli/Dockerfile
-      args:
-        - XDEBUG_HOST=${XDEBUG_HOST}
-        - XDEBUG_PORT=${XDEBUG_PORT}
     working_dir: /app
     volumes:
       - ../:/app
-      - ../:/opt/project
     tty: true
     stdin_open: true
     networks:
