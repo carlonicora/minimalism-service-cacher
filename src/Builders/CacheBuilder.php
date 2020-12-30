@@ -8,12 +8,8 @@ use CarloNicora\Minimalism\Services\Cacher\Iterators\CacheIdentificatorsIterator
 
 class CacheBuilder implements CacheBuilderInterface
 {
-    public const ALL=0;
-    public const DATA=1;
-    public const JSON=2;
-
     /** @var int  */
-    private int $type=self::DATA;
+    private int $type=CacheBuilderInterface::DATA;
 
     /** @var CacheIdentificatorCommand|null  */
     private ?CacheIdentificatorCommand $cacheIdentifier=null;
@@ -149,9 +145,19 @@ class CacheBuilder implements CacheBuilderInterface
     }
 
     /**
+     * @param int|string $identifier
+     */
+    public function setCacheIdentifier(int|string $identifier): void
+    {
+        if ($this->cacheIdentifier !== null){
+            $this->cacheIdentifier->setIdentifier($identifier);
+        }
+    }
+
+    /**
      * @param CacheIdentificatorCommand $cacheIdentifier
      */
-    public function setCacheIdentifier(CacheIdentificatorCommand $cacheIdentifier): void
+    public function setFullCacheIdentifier(CacheIdentificatorCommand $cacheIdentifier): void
     {
         $this->cacheIdentifier = $cacheIdentifier;
     }
@@ -162,11 +168,11 @@ class CacheBuilder implements CacheBuilderInterface
     public function setTypeFromString(string $stringType): void
     {
         if ($stringType === 'ALL'){
-            $this->type = self::ALL;
+            $this->type = CacheBuilderInterface::ALL;
         } elseif ($stringType === 'DATA'){
-            $this->type = self::DATA;
+            $this->type = CacheBuilderInterface::DATA;
         } else {
-            $this->type = self::JSON;
+            $this->type = CacheBuilderInterface::JSON;
         }
     }
 
