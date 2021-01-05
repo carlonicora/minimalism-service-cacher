@@ -1,6 +1,7 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher;
 
+use CarloNicora\Minimalism\Interfaces\CacheBuilderFactoryInterface;
 use CarloNicora\Minimalism\Interfaces\CacheBuilderInterface;
 use CarloNicora\Minimalism\Interfaces\CacheInterface;
 use CarloNicora\Minimalism\Interfaces\ServiceInterface;
@@ -16,8 +17,8 @@ class Cacher implements ServiceInterface, CacheInterface
     /** @var array  */
     private array $definitions=[];
 
-    /** @var CacheBuilderFactory  */
-    private CacheBuilderFactory $factory;
+    /** @var CacheBuilderFactory|CacheBuilderFactoryInterface  */
+    private CacheBuilderFactory|CacheBuilderFactoryInterface $factory;
 
     /**
      * poser constructor.
@@ -272,4 +273,12 @@ class Cacher implements ServiceInterface, CacheInterface
      *
      */
     public function destroy(): void {}
+
+    /**
+     * @return CacheBuilderFactoryInterface
+     */
+    public function getCacheBuilderFactory(): CacheBuilderFactoryInterface
+    {
+        return $this->factory;
+    }
 }

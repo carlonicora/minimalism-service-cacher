@@ -1,8 +1,8 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Factories;
 
+use CarloNicora\Minimalism\Interfaces\CacheBuilderFactoryInterface;
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
-use CarloNicora\Minimalism\Services\Cacher\Interfaces\CacheBuilderFactoryInterface;
 
 class CacheBuilderFactory implements CacheBuilderFactoryInterface
 {
