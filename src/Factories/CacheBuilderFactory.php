@@ -46,7 +46,7 @@ class CacheBuilderFactory implements CacheBuilderFactoryInterface
     {
         $response = new CacheBuilder();
 
-        [, $type, $list, $cache, $context] = explode(':', $key);
+        [, $type, $list, $cache, $context] = array_pad(explode(':', $key), 5, null);
 
         $response->setFullCacheIdentifier(
             $this->cacheIdentificatorFactory->fromKeyPart($cache)
