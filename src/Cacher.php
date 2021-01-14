@@ -14,9 +14,6 @@ use JsonException;
 
 class Cacher implements ServiceInterface, CacheInterface
 {
-    /** @var array  */
-    private array $definitions=[];
-
     /** @var CacheBuilderFactory|CacheBuilderFactoryInterface  */
     private CacheBuilderFactory|CacheBuilderFactoryInterface $factory;
 
@@ -40,14 +37,6 @@ class Cacher implements ServiceInterface, CacheInterface
     public function getFactory(): CacheBuilderFactory
     {
         return $this->factory;
-    }
-
-    /**
-     * @param array $definitions
-     */
-    public function setDefinitions(array $definitions): void
-    {
-        $this->definitions = $definitions;
     }
 
     /**
@@ -170,9 +159,10 @@ class Cacher implements ServiceInterface, CacheInterface
         if ($builder->isList()){
             $this->invalidateList($builder->getKey());
         } elseif ($builder->getShouldInvalidateAllChildren()){
-            $this->invalidateChildren($builder->getChildrenKeysPattern());
+            $this->invalidateChildren($builder->getKeyPattern());
         } else {
-            foreach ($this->definitions[$builder->getCacheName()] ?? [] as $dependentCacheName) {
+            $definitions = $this->getDependents($builder);
+            foreach ($definitions[$builder->getCacheName()] ?? [] as $dependentCacheName) {
                 $this->invalidateDependents($builder->getChildKeysPattern($dependentCacheName));
             }
         }
@@ -185,6 +175,31 @@ class Cacher implements ServiceInterface, CacheInterface
         }
 
         $this->redis->remove($keys);
+    }
+
+    /**
+     * @param CacheBuilderInterface|CacheBuilder $builder
+     * @return array
+     * @throws RedisConnectionException
+     */
+    private function getDependents(CacheBuilderInterface|CacheBuilder $builder): array
+    {
+        $dependentCacheBuilderKeys = $builder->getChildrenKeysPattern();
+        $keys = $this->redis->getKeys($dependentCacheBuilderKeys);
+
+        $response = [];
+        foreach ($keys ?? [] as $singleKey) {
+            $dependentCache = $this->factory->createFromKey($singleKey);
+            if (
+                $dependentCache->getListName() !== null
+                &&
+                !array_key_exists($dependentCache->getListName(), $response)
+            ) {
+                $response[] = $dependentCache->getListName();
+            }
+        }
+
+        return $response;
     }
 
     /**

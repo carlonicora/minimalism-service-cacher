@@ -23,16 +23,11 @@ class CacheKeyInterpreter
     {
         $response = ':';
 
-        switch ($type) {
-            case CacheBuilder::DATA:
-                $response .= 'DATA';
-                break;
-            case CacheBuilder::JSON:
-                $response .= 'JSON';
-                break;
-            default:
-                $response .= 'ALL';
-        }
+        $response .= match ($type) {
+            CacheBuilder::DATA => 'DATA',
+            CacheBuilder::JSON => 'JSON',
+            default => 'ALL',
+        };
 
         return $response;
     }

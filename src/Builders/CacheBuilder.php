@@ -367,6 +367,6 @@ class CacheBuilder implements CacheBuilderInterface
             . $this->interpreter->getAllTypesPart()
             . $this->interpreter->getAllListsKeyPart()
             . $this->interpreter->getCacheIdentificatorPart($this->cacheIdentifier)
-            . $this->interpreter->getCacheContextPart($this->contexts);
+            . $this->interpreter->getCacheAllContextParts();
     }
 }
