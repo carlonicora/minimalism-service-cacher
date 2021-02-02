@@ -162,7 +162,7 @@ class Cacher implements ServiceInterface, CacheInterface
             $this->invalidateChildren($builder->getKeyPattern());
         } else {
             $definitions = $this->getDependents($builder);
-            foreach ($definitions[$builder->getCacheName()] ?? [] as $dependentCacheName) {
+            foreach ($definitions ?? [] as $dependentCacheName) {
                 $this->invalidateDependents($builder->getChildKeysPattern($dependentCacheName));
             }
         }
