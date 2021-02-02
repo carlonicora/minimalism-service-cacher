@@ -63,9 +63,11 @@ class CacheBuilderFactory implements CacheBuilderFactoryInterface
                 $response->setType(CacheBuilder::ALL);
         }
 
-        $response->setListName(
-            $list
-        );
+        if ($list !== 'null') {
+            $response->setListName(
+                $list
+            );
+        }
 
         $response->setContexts(
             $this->cacheIdentificatorIteratorFactory->fromKeyPart($context)
