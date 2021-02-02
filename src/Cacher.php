@@ -169,7 +169,7 @@ class Cacher implements ServiceInterface, CacheInterface
 
         if ($builder->getType() === CacheBuilder::DATA){
              $builder->setType(CacheBuilder::ALL);
-             $keys = $this->redis->getKeys($builder->getKeyPattern());
+             $keys = $this->redis->getKeys($builder->getChildrenKeysPattern());
         } else {
             $keys = $builder->getKey();
         }
