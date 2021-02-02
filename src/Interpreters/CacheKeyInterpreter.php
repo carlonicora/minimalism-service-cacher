@@ -26,7 +26,7 @@ class CacheKeyInterpreter
         $response .= match ($type) {
             CacheBuilder::DATA => 'DATA',
             CacheBuilder::JSON => 'JSON',
-            default => 'ALL',
+            default => '*',
         };
 
         return $response;

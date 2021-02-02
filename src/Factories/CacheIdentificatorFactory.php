@@ -22,8 +22,8 @@ class CacheIdentificatorFactory
      */
     public function fromKeyPart(string $keyPart): CacheIdentificatorCommand
     {
-        preg_match('#\((.*?)\)#', $keyPart, $matches);
+        preg_match('#(.*?)\((.*?)\)#', $keyPart, $matches);
 
-        return new CacheIdentificatorCommand($matches[0], $matches[1]);
+        return new CacheIdentificatorCommand($matches[1], $matches[2]);
     }
 }

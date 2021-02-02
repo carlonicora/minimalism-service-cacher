@@ -191,9 +191,9 @@ class Cacher implements ServiceInterface, CacheInterface
         foreach ($keys ?? [] as $singleKey) {
             $dependentCache = $this->factory->createFromKey($singleKey);
             if (
-                $dependentCache->getListName() !== null
+                $dependentCache->getListName() !== 'null'
                 &&
-                !array_key_exists($dependentCache->getListName(), $response)
+                !in_array($dependentCache->getListName(), $response, true)
             ) {
                 $response[] = $dependentCache->getListName();
             }

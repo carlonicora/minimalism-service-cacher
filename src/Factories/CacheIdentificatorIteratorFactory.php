@@ -24,7 +24,7 @@ class CacheIdentificatorIteratorFactory
     {
         $response = new CacheIdentificatorsIterator();
 
-        if ($iteratorKeyPart !== null) {
+        if (false === empty($iteratorKeyPart)) {
             $keyParts = explode('-', $iteratorKeyPart);
 
             foreach ($keyParts as $keyPart) {
