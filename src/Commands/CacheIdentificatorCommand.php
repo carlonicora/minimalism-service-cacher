@@ -7,7 +7,7 @@ class CacheIdentificatorCommand
     private string $name;
 
     /** @var mixed|null */
-    private $identifier;
+    private mixed $identifier;
 
     /**
      * CacheIdentificationCommand constructor.

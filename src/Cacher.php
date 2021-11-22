@@ -1,9 +1,10 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher;
 
-use CarloNicora\Minimalism\Interfaces\CacheBuilderFactoryInterface;
-use CarloNicora\Minimalism\Interfaces\CacheBuilderInterface;
-use CarloNicora\Minimalism\Interfaces\CacheInterface;
+use CarloNicora\Minimalism\Interfaces\Cache\Enums\CacheType;
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderFactoryInterface;
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderInterface;
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheInterface;
 use CarloNicora\Minimalism\Interfaces\ServiceInterface;
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
 use CarloNicora\Minimalism\Services\Cacher\Factories\CacheBuilderFactory;
@@ -65,10 +66,10 @@ class Cacher implements ServiceInterface, CacheInterface
     /**
      * @param CacheBuilderInterface $builder
      * @param string $data
-     * @param int $cacheBuilderType
+     * @param CacheType $cacheBuilderType
      * @throws RedisConnectionException
      */
-    public function save(CacheBuilderInterface $builder, string $data, int $cacheBuilderType): void
+    public function save(CacheBuilderInterface $builder, string $data, CacheType $cacheBuilderType): void
     {
         $builder->setType($cacheBuilderType);
         $this->saveCache(
@@ -81,18 +82,18 @@ class Cacher implements ServiceInterface, CacheInterface
     /**
      * @param CacheBuilderInterface $builder
      * @param array $data
-     * @param int $cacheBuilderType
+     * @param CacheType $cacheBuilderType
      * @throws JsonException
      * @throws RedisConnectionException
      */
-    public function saveArray(CacheBuilderInterface $builder, array $data, int $cacheBuilderType): void
+    public function saveArray(CacheBuilderInterface $builder, array $data, CacheType $cacheBuilderType): void
     {
         $jsonData = json_encode($data, JSON_THROW_ON_ERROR);
         $this->save($builder, $jsonData, $cacheBuilderType);
 
         if (
             array_key_exists(0, $data)
-            && $builder->getType() === CacheBuilder::DATA
+            && $builder->getType() === CacheType::Data
             && $builder->isList()
         ) {
             foreach ($data as $child){
@@ -121,10 +122,10 @@ class Cacher implements ServiceInterface, CacheInterface
 
     /**
      * @param CacheBuilderInterface $builder
-     * @param int $cacheBuilderType
+     * @param CacheType $cacheBuilderType
      * @return string|null
      */
-    public function read(CacheBuilderInterface $builder, int $cacheBuilderType): ?string
+    public function read(CacheBuilderInterface $builder, CacheType $cacheBuilderType): ?string
     {
         $builder->setType($cacheBuilderType);
         try {
@@ -136,10 +137,10 @@ class Cacher implements ServiceInterface, CacheInterface
 
     /**
      * @param CacheBuilderInterface $builder
-     * @param int $cacheBuilderType
+     * @param CacheType $cacheBuilderType
      * @return array|null
      */
-    public function readArray(CacheBuilderInterface $builder, int $cacheBuilderType): ?array
+    public function readArray(CacheBuilderInterface $builder, CacheType $cacheBuilderType): ?array
     {
         $builder->setType($cacheBuilderType);
         try {
@@ -167,8 +168,8 @@ class Cacher implements ServiceInterface, CacheInterface
             }
         }
 
-        if ($builder->getType() === CacheBuilder::DATA){
-             $builder->setType(CacheBuilder::ALL);
+        if ($builder->getType() === CacheType::Data){
+             $builder->setType(CacheType::All);
              $keys = $this->redis->getKeys($builder->getChildrenKeysPattern());
         } else {
             $keys = $builder->getKey();
@@ -214,7 +215,7 @@ class Cacher implements ServiceInterface, CacheInterface
             $childCacheBuilder = $this->factory->createFromKey($childKey);
             if ($childCacheBuilder->getCacheIdentifier() !== null){
                 $childCacheBuilder->clearContexts();
-                $childCacheBuilder->setType(CacheBuilder::ALL);
+                $childCacheBuilder->setType(CacheType::All);
 
                 $this->invalidate($childCacheBuilder);
             }
@@ -241,11 +242,11 @@ class Cacher implements ServiceInterface, CacheInterface
                 $dependentCacheBuilderInitiator->getCacheName(),
                 $dependentCacheBuilderInitiator->getCacheIdentifier()
             )->withType(
-                CacheBuilder::ALL
+                CacheType::All
             );
             $this->invalidate($dependentListCacheBuilder);
 
-            if ($dependentCacheBuilderInitiator->getType() !== CacheBuilder::DATA){
+            if ($dependentCacheBuilderInitiator->getType() !== CacheType::All){
                 $dependentCacheBuilder = $this->factory->create(
                     $dependentCacheBuilderInitiator->getCacheName(),
                     $dependentCacheBuilderInitiator->getCacheIdentifier()

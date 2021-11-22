@@ -1,15 +1,16 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Builders;
 
-use CarloNicora\Minimalism\Interfaces\CacheBuilderInterface;
+use CarloNicora\Minimalism\Interfaces\Cache\Enums\CacheType;
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderInterface;
 use CarloNicora\Minimalism\Services\Cacher\Commands\CacheIdentificatorCommand;
 use CarloNicora\Minimalism\Services\Cacher\Interpreters\CacheKeyInterpreter;
 use CarloNicora\Minimalism\Services\Cacher\Iterators\CacheIdentificatorsIterator;
 
 class CacheBuilder implements CacheBuilderInterface
 {
-    /** @var int  */
-    private int $type=CacheBuilderInterface::DATA;
+    /** @var CacheType  */
+    private CacheType $type=CacheType::Data;
 
     /** @var CacheIdentificatorCommand|null  */
     private ?CacheIdentificatorCommand $cacheIdentifier=null;
@@ -67,10 +68,10 @@ class CacheBuilder implements CacheBuilderInterface
     }
 
     /**
-     * @param int $type
+     * @param CacheType $type
      * @return $this
      */
-    public function withType(int $type): CacheBuilder
+    public function withType(CacheType $type): CacheBuilder
     {
         $this->type = $type;
 
@@ -101,10 +102,10 @@ class CacheBuilder implements CacheBuilderInterface
 
     /**
      * @param string $name
-     * @param mixed $identifier
+     * @param mixed|null $identifier
      * @return CacheBuilder
      */
-    public function addContext(string $name, $identifier=null): CacheBuilder
+    public function addContext(string $name, mixed $identifier=null): CacheBuilder
     {
         $this->contexts->addCacheIdentificator(
             new CacheIdentificatorCommand(
@@ -149,9 +150,7 @@ class CacheBuilder implements CacheBuilderInterface
      */
     public function setCacheIdentifier(int|string $identifier): void
     {
-        if ($this->cacheIdentifier !== null){
-            $this->cacheIdentifier->setIdentifier($identifier);
-        }
+        $this->cacheIdentifier?->setIdentifier($identifier);
     }
 
     /**
@@ -167,19 +166,19 @@ class CacheBuilder implements CacheBuilderInterface
      */
     public function setTypeFromString(string $stringType): void
     {
-        if ($stringType === 'ALL'){
-            $this->type = CacheBuilderInterface::ALL;
-        } elseif ($stringType === 'DATA'){
-            $this->type = CacheBuilderInterface::DATA;
+        if ($stringType === CacheType::All->name){
+            $this->type = CacheType::All;
+        } elseif ($stringType === CacheType::Data->name){
+            $this->type = CacheType::Data;
         } else {
-            $this->type = CacheBuilderInterface::JSON;
+            $this->type = CacheType::Json;
         }
     }
 
     /**
-     * @param int $type
+     * @param CacheType $type
      */
-    public function setType(int $type): void
+    public function setType(CacheType $type): void
     {
         $this->type = $type;
     }
@@ -213,9 +212,9 @@ class CacheBuilder implements CacheBuilderInterface
     }
 
     /**
-     * @return int
+     * @return CacheType
      */
-    public function getType(): int
+    public function getType(): CacheType
     {
         return $this->type;
     }
@@ -265,7 +264,7 @@ class CacheBuilder implements CacheBuilderInterface
      */
     public function getListName(): ?string
     {
-        return $this->list === null ? null : $this->list->getName();
+        return $this->list?->getName();
     }
 
     /**

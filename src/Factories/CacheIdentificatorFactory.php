@@ -1,5 +1,4 @@
 <?php
-
 namespace CarloNicora\Minimalism\Services\Cacher\Factories;
 
 use CarloNicora\Minimalism\Services\Cacher\Commands\CacheIdentificatorCommand;

@@ -1,7 +1,8 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Factories;
 
-use CarloNicora\Minimalism\Interfaces\CacheBuilderFactoryInterface;
+use CarloNicora\Minimalism\Interfaces\Cache\Enums\CacheType;
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderFactoryInterface;
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
 
 class CacheBuilderFactory implements CacheBuilderFactoryInterface
@@ -53,14 +54,14 @@ class CacheBuilderFactory implements CacheBuilderFactoryInterface
         );
 
         switch ($type) {
-            case 'DATA':
-                $response->setType(CacheBuilder::DATA);
+            case CacheType::Data->name:
+                $response->setType( CacheType::Data);
                 break;
-            case 'JSON':
-                $response->setType(CacheBuilder::JSON);
+            case CacheType::Json->name:
+                $response->setType(CacheType::Json);
                 break;
             default:
-                $response->setType(CacheBuilder::ALL);
+                $response->setType(CacheType::All);
         }
 
         if ($list !== 'null') {

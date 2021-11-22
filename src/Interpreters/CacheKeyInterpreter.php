@@ -1,7 +1,7 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Interpreters;
 
-use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
+use CarloNicora\Minimalism\Interfaces\Cache\Enums\CacheType;
 use CarloNicora\Minimalism\Services\Cacher\Commands\CacheIdentificatorCommand;
 use CarloNicora\Minimalism\Services\Cacher\Iterators\CacheIdentificatorsIterator;
 
@@ -16,16 +16,16 @@ class CacheKeyInterpreter
     }
 
     /**
-     * @param int $type
+     * @param CacheType $type
      * @return string
      */
-    public function getTypePart(int $type): string
+    public function getTypePart(CacheType $type): string
     {
         $response = ':';
 
         $response .= match ($type) {
-            CacheBuilder::DATA => 'DATA',
-            CacheBuilder::JSON => 'JSON',
+            CacheType::Data => CacheType::Data->name,
+            CacheType::Json => CacheType::Json->name,
             default => '*',
         };
 
@@ -124,9 +124,7 @@ class CacheKeyInterpreter
                 . ')-';
         }
 
-        $response = substr($response, 0, -1);
-
-        return $response;
+        return substr($response, 0, -1);
     }
 
     /**

@@ -25,9 +25,7 @@ class CacheIdentificatorIteratorFactory
         $response = new CacheIdentificatorsIterator();
 
         if (false === empty($iteratorKeyPart)) {
-            $keyParts = explode('-', $iteratorKeyPart);
-
-            foreach ($keyParts as $keyPart) {
+            foreach (explode('-', $iteratorKeyPart) as $keyPart) {
                 $response->addCacheIdentificator(
                     $this->cacheIdentificatorFactory->fromKeyPart($keyPart)
                 );

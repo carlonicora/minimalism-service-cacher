@@ -1,12 +1,12 @@
 {
   "name": "carlonicora/minimalism-service-cacher",
   "description": "Caching service for minimalism",
-  "version": "3.1.4-beta1",
+  "version": "3.1.5-alpha1",
   "homepage": "https://carlonicora.com",
   "time": "2019-05-24",
   "license": "MIT",
   "type": "library",
-  "minimum-stability": "beta",
+  "minimum-stability": "alpha",
   "authors": [
     {
       "name": "Carlo Nicora",
@@ -22,7 +22,8 @@
   },
   "require": {
     "php": ">=8.0",
-    "carlonicora/minimalism": "~13.0",
+    "carlonicora/minimalism": "~13.0.1",
+    "carlonicora/minimalism-interface-cache": "~1.0.0",
     "carlonicora/minimalism-service-redis": "~3.0",
     "ext-json": "*"
   }
