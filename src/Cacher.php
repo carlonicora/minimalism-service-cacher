@@ -1,11 +1,11 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher;
 
+use CarloNicora\Minimalism\Abstracts\AbstractService;
 use CarloNicora\Minimalism\Interfaces\Cache\Enums\CacheType;
 use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderFactoryInterface;
 use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderInterface;
 use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheInterface;
-use CarloNicora\Minimalism\Interfaces\ServiceInterface;
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
 use CarloNicora\Minimalism\Services\Cacher\Factories\CacheBuilderFactory;
 use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisConnectionException;
@@ -13,7 +13,7 @@ use CarloNicora\Minimalism\Services\Redis\Exceptions\RedisKeyNotFoundException;
 use CarloNicora\Minimalism\Services\Redis\Redis;
 use JsonException;
 
-class Cacher implements ServiceInterface, CacheInterface
+class Cacher extends AbstractService implements CacheInterface
 {
     /** @var CacheBuilderFactory|CacheBuilderFactoryInterface  */
     private CacheBuilderFactory|CacheBuilderFactoryInterface $factory;
@@ -23,13 +23,27 @@ class Cacher implements ServiceInterface, CacheInterface
      * @param Redis $redis
      * @param bool|null $MINIMALISM_SERVICE_CACHER_USE
      */
-    public function __construct(private Redis $redis, private ?bool $MINIMALISM_SERVICE_CACHER_USE=null)
+    public function __construct(
+        private Redis $redis,
+        private ?bool $MINIMALISM_SERVICE_CACHER_USE=null,
+    )
     {
+        parent::__construct();
+
         if ($this->MINIMALISM_SERVICE_CACHER_USE === null){
             $this->MINIMALISM_SERVICE_CACHER_USE = false;
         }
 
         $this->factory = new CacheBuilderFactory();
+    }
+
+    /**
+     * @return string|null
+     */
+    public static function getBaseInterface(
+    ): ?string
+    {
+        return CacheInterface::class;
     }
 
     /**
@@ -279,16 +293,6 @@ class Cacher implements ServiceInterface, CacheInterface
             $this->redis->remove($linkedCachessKeysList);
         }
     }
-
-    /**
-     *
-     */
-    public function initialise(): void {}
-
-    /**
-     *
-     */
-    public function destroy(): void {}
 
     /**
      * @return CacheBuilderFactoryInterface
