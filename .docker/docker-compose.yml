@@ -3,7 +3,7 @@ version: '3.8'
 services:
   minimalism-service-cacher:
     container_name: minimalism-service-cacher
-    image: carlonicora/minimalism-service-cacher:3.0
+    image: carlonicora/minimalism-service-cacher:4.0
     build:
       context: .
       dockerfile: ./php-cli/Dockerfile
