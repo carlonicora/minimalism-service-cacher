@@ -28,8 +28,6 @@ class Cacher extends AbstractService implements CacheInterface
         private ?bool $MINIMALISM_SERVICE_CACHER_USE=null,
     )
     {
-        parent::__construct();
-
         if ($this->MINIMALISM_SERVICE_CACHER_USE === null){
             $this->MINIMALISM_SERVICE_CACHER_USE = false;
         }
