@@ -7,16 +7,36 @@ use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
 
 class CacheBuilderFactory implements CacheBuilderFactoryInterface
 {
-    /** @var CacheIdentificatorFactory  */
-    private CacheIdentificatorFactory $cacheIdentificatorFactory;
+    /** @var CacheIdentificatorFactory|null  */
+    private static ?CacheIdentificatorFactory $cacheIdentificatorFactory=null;
 
-    /** @var CacheIdentificatorIteratorFactory  */
-    private CacheIdentificatorIteratorFactory $cacheIdentificatorIteratorFactory;
+    /** @var CacheIdentificatorIteratorFactory|null  */
+    private static ?CacheIdentificatorIteratorFactory $cacheIdentificatorIteratorFactory=null;
 
-    public function __construct()
+    /**
+     * @return CacheIdentificatorFactory
+     */
+    private static function getCacheIdentificatorFactory(
+    ): CacheIdentificatorFactory
     {
-        $this->cacheIdentificatorFactory = new CacheIdentificatorFactory();
-        $this->cacheIdentificatorIteratorFactory = new CacheIdentificatorIteratorFactory();
+        if (self::$cacheIdentificatorFactory === null) {
+            self::$cacheIdentificatorFactory = new CacheIdentificatorFactory();
+        }
+
+        return self::$cacheIdentificatorFactory;
+    }
+
+    /**
+     * @return CacheIdentificatorIteratorFactory
+     */
+    private static function getCacheIdentificatorIteratorFactory(
+    ): CacheIdentificatorIteratorFactory
+    {
+        if (self::$cacheIdentificatorIteratorFactory === null) {
+            self::$cacheIdentificatorIteratorFactory = new CacheIdentificatorIteratorFactory();
+        }
+
+        return self::$cacheIdentificatorIteratorFactory;
     }
 
     /**
@@ -24,14 +44,14 @@ class CacheBuilderFactory implements CacheBuilderFactoryInterface
      * @param $identifier
      * @return CacheBuilder
      */
-    public function create(
+    public static function create(
         string $cacheName,
         $identifier
     ): CacheBuilder
     {
         $response = new CacheBuilder();
         $response->setFullCacheIdentifier(
-            $this->cacheIdentificatorFactory->fromNameIdentifier($cacheName, $identifier)
+            self::getCacheIdentificatorFactory()->fromNameIdentifier($cacheName, $identifier)
         );
 
         return $response;
@@ -41,7 +61,7 @@ class CacheBuilderFactory implements CacheBuilderFactoryInterface
      * @param string $key
      * @return CacheBuilder
      */
-    public function createFromKey(
+    public static function createFromKey(
         string $key
     ): CacheBuilder
     {
@@ -50,7 +70,7 @@ class CacheBuilderFactory implements CacheBuilderFactoryInterface
         [, $type, $list, $cache, $context] = array_pad(explode(':', $key), 5, null);
 
         $response->setFullCacheIdentifier(
-            $this->cacheIdentificatorFactory->fromKeyPart($cache)
+            self::getCacheIdentificatorFactory()->fromKeyPart($cache)
         );
 
         switch ($type) {
@@ -71,7 +91,7 @@ class CacheBuilderFactory implements CacheBuilderFactoryInterface
         }
 
         $response->setContexts(
-            $this->cacheIdentificatorIteratorFactory->fromKeyPart($context)
+            self::getCacheIdentificatorIteratorFactory()->fromKeyPart($context)
         );
 
         return $response;
@@ -84,14 +104,14 @@ class CacheBuilderFactory implements CacheBuilderFactoryInterface
      * @param bool $saveGranular
      * @return CacheBuilder
      */
-    public function createList(
+    public static function createList(
         string $listName,
         string $cacheName,
         $identifier,
         bool $saveGranular=true
     ): CacheBuilder
     {
-        $response = $this->create($cacheName, $identifier);
+        $response = self::create($cacheName, $identifier);
         $response->withList($listName)
             ->withGranularSaveOfChildren($saveGranular);
 

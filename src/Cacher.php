@@ -3,7 +3,6 @@ namespace CarloNicora\Minimalism\Services\Cacher;
 
 use CarloNicora\Minimalism\Abstracts\AbstractService;
 use CarloNicora\Minimalism\Interfaces\Cache\Enums\CacheType;
-use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderFactoryInterface;
 use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderInterface;
 use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheInterface;
 use CarloNicora\Minimalism\Services\Cacher\Builders\CacheBuilder;
@@ -15,9 +14,6 @@ use JsonException;
 
 class Cacher extends AbstractService implements CacheInterface
 {
-    /** @var CacheBuilderFactory|CacheBuilderFactoryInterface  */
-    private CacheBuilderFactory|CacheBuilderFactoryInterface $factory;
-
     /**
      * poser constructor.
      * @param Redis $redis
@@ -31,8 +27,6 @@ class Cacher extends AbstractService implements CacheInterface
         if ($this->MINIMALISM_SERVICE_CACHER_USE === null){
             $this->MINIMALISM_SERVICE_CACHER_USE = false;
         }
-
-        $this->factory = new CacheBuilderFactory();
     }
 
     /**
@@ -42,14 +36,6 @@ class Cacher extends AbstractService implements CacheInterface
     ): ?string
     {
         return CacheInterface::class;
-    }
-
-    /**
-     * @return CacheBuilderFactory
-     */
-    public function getFactory(): CacheBuilderFactory
-    {
-        return $this->factory;
     }
 
     /**
@@ -202,7 +188,7 @@ class Cacher extends AbstractService implements CacheInterface
 
         $response = [];
         foreach ($keys ?? [] as $singleKey) {
-            $dependentCache = $this->factory->createFromKey($singleKey);
+            $dependentCache = CacheBuilderFactory::createFromKey($singleKey);
             if (
                 $dependentCache->getListName() !== null
                 &&
@@ -224,7 +210,7 @@ class Cacher extends AbstractService implements CacheInterface
         $childrenKeys = $this->redis->getKeys($keysPattern);
 
         foreach ($childrenKeys as $childKey){
-            $childCacheBuilder = $this->factory->createFromKey($childKey);
+            $childCacheBuilder = CacheBuilderFactory::createFromKey($childKey);
             if ($childCacheBuilder->getCacheIdentifier() !== null){
                 $childCacheBuilder->clearContexts();
                 $childCacheBuilder->setType(CacheType::All);
@@ -248,8 +234,8 @@ class Cacher extends AbstractService implements CacheInterface
          * Deletes all the Cache Lists linked to the cache
          */
         foreach ($dependentListCachesKeys ?? [] as $dependentListCacheKey) {
-            $dependentCacheBuilderInitiator = $this->factory->createFromKey($dependentListCacheKey);
-            $dependentListCacheBuilder = $this->factory->createList(
+            $dependentCacheBuilderInitiator = CacheBuilderFactory::createFromKey($dependentListCacheKey);
+            $dependentListCacheBuilder = CacheBuilderFactory::createList(
                 $dependentCacheBuilderInitiator->getListName(),
                 $dependentCacheBuilderInitiator->getCacheName(),
                 $dependentCacheBuilderInitiator->getCacheIdentifier()
@@ -259,7 +245,7 @@ class Cacher extends AbstractService implements CacheInterface
             $this->invalidate($dependentListCacheBuilder);
 
             if ($dependentCacheBuilderInitiator->getType() !== CacheType::All){
-                $dependentCacheBuilder = $this->factory->create(
+                $dependentCacheBuilder = CacheBuilderFactory::create(
                     $dependentCacheBuilderInitiator->getCacheName(),
                     $dependentCacheBuilderInitiator->getCacheIdentifier()
                 )->withType($dependentCacheBuilderInitiator->getType());
@@ -275,9 +261,9 @@ class Cacher extends AbstractService implements CacheInterface
      */
     private function invalidateList(string $key): void
     {
-        $linkedCacheBuilderInitiator = $this->factory->createFromKey($key);
+        $linkedCacheBuilderInitiator = CacheBuilderFactory::createFromKey($key);
 
-        $linkedCacheBuilder = $this->factory->createList(
+        $linkedCacheBuilder = CacheBuilderFactory::createList(
             $linkedCacheBuilderInitiator->getListName(),
             $linkedCacheBuilderInitiator->getCacheName(),
             $linkedCacheBuilderInitiator->getCacheIdentifier()
@@ -290,13 +276,5 @@ class Cacher extends AbstractService implements CacheInterface
         if (($linkedCachessKeysList = $this->redis->getKeys($linkedCacheBuilder->getKey())) !== []){
             $this->redis->remove($linkedCachessKeysList);
         }
-    }
-
-    /**
-     * @return CacheBuilderFactoryInterface
-     */
-    public function getCacheBuilderFactory(): CacheBuilderFactoryInterface
-    {
-        return $this->factory;
     }
 }
