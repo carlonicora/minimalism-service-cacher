@@ -277,4 +277,15 @@ class Cacher extends AbstractService implements CacheInterface
             $this->redis->remove($linkedCachessKeysList);
         }
     }
+
+    /**
+     * @param string $baseFactory
+     * @return string
+     */
+    public function getBuilderFactory(
+        string $baseFactory,
+    ): string
+    {
+        return CacheBuilderFactory::class;
+    }
 }
