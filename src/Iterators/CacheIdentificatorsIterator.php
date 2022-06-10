@@ -1,17 +1,19 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Iterators;
 
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheIdentificatorCommandInterface;
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheIdentificatorsIteratorInterface;
 use CarloNicora\Minimalism\Services\Cacher\Commands\CacheIdentificatorCommand;
 
-class CacheIdentificatorsIterator
+class CacheIdentificatorsIterator implements CacheIdentificatorsIteratorInterface
 {
     /** @var array|CacheIdentificatorCommand[]  */
     private array $cacheIdentificators=[];
 
     /**
-     * @param CacheIdentificatorCommand $cacheIdentificator
+     * @param CacheIdentificatorCommandInterface $cacheIdentificator
      */
-    public function addCacheIdentificator(CacheIdentificatorCommand $cacheIdentificator): void
+    public function addCacheIdentificator(CacheIdentificatorCommandInterface $cacheIdentificator): void
     {
         $this->cacheIdentificators[] = $cacheIdentificator;
     }

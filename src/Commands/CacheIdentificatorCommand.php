@@ -1,7 +1,9 @@
 <?php
 namespace CarloNicora\Minimalism\Services\Cacher\Commands;
 
-class CacheIdentificatorCommand
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheIdentificatorCommandInterface;
+
+class CacheIdentificatorCommand implements CacheIdentificatorCommandInterface
 {
     /** @var string  */
     private string $name;

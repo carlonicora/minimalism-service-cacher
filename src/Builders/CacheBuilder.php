@@ -3,6 +3,8 @@ namespace CarloNicora\Minimalism\Services\Cacher\Builders;
 
 use CarloNicora\Minimalism\Interfaces\Cache\Enums\CacheType;
 use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderInterface;
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheIdentificatorCommandInterface;
+use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheIdentificatorsIteratorInterface;
 use CarloNicora\Minimalism\Services\Cacher\Commands\CacheIdentificatorCommand;
 use CarloNicora\Minimalism\Services\Cacher\Interpreters\CacheKeyInterpreter;
 use CarloNicora\Minimalism\Services\Cacher\Iterators\CacheIdentificatorsIterator;
@@ -12,14 +14,14 @@ class CacheBuilder implements CacheBuilderInterface
     /** @var CacheType  */
     private CacheType $type=CacheType::Data;
 
-    /** @var CacheIdentificatorCommand|null  */
-    private ?CacheIdentificatorCommand $cacheIdentifier=null;
+    /** @var CacheIdentificatorCommandInterface|null  */
+    private ?CacheIdentificatorCommandInterface $cacheIdentifier=null;
 
-    /** @var CacheIdentificatorCommand|null  */
-    private ?CacheIdentificatorCommand $list=null;
+    /** @var CacheIdentificatorCommandInterface|null  */
+    private ?CacheIdentificatorCommandInterface $list=null;
 
-    /** @var CacheIdentificatorsIterator  */
-    private CacheIdentificatorsIterator $contexts;
+    /** @var CacheIdentificatorsIteratorInterface  */
+    private CacheIdentificatorsIteratorInterface $contexts;
 
     /** @var CacheKeyInterpreter  */
     private CacheKeyInterpreter $interpreter;
@@ -47,9 +49,9 @@ class CacheBuilder implements CacheBuilderInterface
 
     /**
      * @param int $ttl
-     * @return CacheBuilder
+     * @return CacheBuilderInterface
      */
-    public function withTtl(int $ttl): CacheBuilder
+    public function withTtl(int $ttl): CacheBuilderInterface
     {
         $this->ttl = $ttl;
 
@@ -58,9 +60,9 @@ class CacheBuilder implements CacheBuilderInterface
 
     /**
      * @param string $listName
-     * @return CacheBuilder
+     * @return CacheBuilderInterface
      */
-    public function withList(string $listName): CacheBuilder
+    public function withList(string $listName): CacheBuilderInterface
     {
         $this->list = new CacheIdentificatorCommand($listName);
 
@@ -69,9 +71,9 @@ class CacheBuilder implements CacheBuilderInterface
 
     /**
      * @param CacheType $type
-     * @return $this
+     * @return CacheBuilderInterface
      */
-    public function withType(CacheType $type): CacheBuilder
+    public function withType(CacheType $type): CacheBuilderInterface
     {
         $this->type = $type;
 
@@ -80,9 +82,9 @@ class CacheBuilder implements CacheBuilderInterface
 
     /**
      * @param bool $saveGranular
-     * @return CacheBuilder
+     * @return CacheBuilderInterface
      */
-    public function withGranularSaveOfChildren(bool $saveGranular): CacheBuilder
+    public function withGranularSaveOfChildren(bool $saveGranular): CacheBuilderInterface
     {
         $this->saveGranular = $saveGranular;
 
@@ -91,9 +93,9 @@ class CacheBuilder implements CacheBuilderInterface
 
     /**
      * @param CacheIdentificatorsIterator $context
-     * @return $this
+     * @return CacheBuilderInterface
      */
-    public function withContexts(CacheIdentificatorsIterator $context): CacheBuilder
+    public function withContexts(CacheIdentificatorsIteratorInterface $context): CacheBuilderInterface
     {
         $this->contexts = $context;
 
@@ -103,9 +105,9 @@ class CacheBuilder implements CacheBuilderInterface
     /**
      * @param string $name
      * @param mixed|null $identifier
-     * @return CacheBuilder
+     * @return CacheBuilderInterface
      */
-    public function addContext(string $name, mixed $identifier=null): CacheBuilder
+    public function addContext(string $name, mixed $identifier=null): CacheBuilderInterface
     {
         $this->contexts->addCacheIdentificator(
             new CacheIdentificatorCommand(
@@ -126,9 +128,9 @@ class CacheBuilder implements CacheBuilderInterface
     }
 
     /**
-     * @return $this
+     * @return CacheBuilderInterface
      */
-    public function forcingContextsOnGranularChildren(): CacheBuilder
+    public function forcingContextsOnGranularChildren(): CacheBuilderInterface
     {
         $this->forceContextOnChildren = true;
 
@@ -136,9 +138,9 @@ class CacheBuilder implements CacheBuilderInterface
     }
 
     /**
-     * @return $this
+     * @return CacheBuilderInterface
      */
-    public function invalidateOnlyChildren(): CacheBuilder
+    public function invalidateOnlyChildren(): CacheBuilderInterface
     {
         $this->invalidateAllChildren = true;
 
@@ -154,9 +156,9 @@ class CacheBuilder implements CacheBuilderInterface
     }
 
     /**
-     * @param CacheIdentificatorCommand $cacheIdentifier
+     * @param CacheIdentificatorCommandInterface $cacheIdentifier
      */
-    public function setFullCacheIdentifier(CacheIdentificatorCommand $cacheIdentifier): void
+    public function setFullCacheIdentifier(CacheIdentificatorCommandInterface $cacheIdentifier): void
     {
         $this->cacheIdentifier = $cacheIdentifier;
     }
@@ -204,9 +206,9 @@ class CacheBuilder implements CacheBuilderInterface
     }
 
     /**
-     * @param CacheIdentificatorsIterator $contexts
+     * @param CacheIdentificatorsIteratorInterface $contexts
      */
-    public function setContexts(CacheIdentificatorsIterator $contexts): void
+    public function setContexts(CacheIdentificatorsIteratorInterface $contexts): void
     {
         $this->contexts = $contexts;
     }
@@ -276,9 +278,9 @@ class CacheBuilder implements CacheBuilderInterface
     }
 
     /**
-     * @return CacheIdentificatorsIterator
+     * @return CacheIdentificatorsIteratorInterface
      */
-    public function getContexts(): CacheIdentificatorsIterator
+    public function getContexts(): CacheIdentificatorsIteratorInterface
     {
         return $this->contexts;
     }
