@@ -2,6 +2,7 @@
 namespace CarloNicora\Minimalism\Services\Cacher;
 
 use CarloNicora\Minimalism\Abstracts\AbstractService;
+use CarloNicora\Minimalism\Interfaces\Cache\Abstracts\AbstractCacheBuilderFactory;
 use CarloNicora\Minimalism\Interfaces\Cache\Enums\CacheType;
 use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheBuilderInterface;
 use CarloNicora\Minimalism\Interfaces\Cache\Interfaces\CacheInterface;
@@ -27,6 +28,11 @@ class Cacher extends AbstractService implements CacheInterface
         if ($this->MINIMALISM_SERVICE_CACHER_USE === null){
             $this->MINIMALISM_SERVICE_CACHER_USE = false;
         }
+    }
+
+    public function initialise(): void
+    {
+        AbstractCacheBuilderFactory::setCacheInterface($this);
     }
 
     /**
