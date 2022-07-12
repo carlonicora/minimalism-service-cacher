@@ -173,13 +173,24 @@ class Cacher extends AbstractService implements CacheInterface
         }
 
         if ($builder->getType() === CacheType::Data){
-             $builder->setType(CacheType::All);
-             $keys = $this->redis->getKeys($builder->getChildrenKeysPattern());
+            $builder->setType(CacheType::All);
+            $keys = $this->redis->getKeys($builder->getChildrenKeysPattern());
         } else {
             $keys = $builder->getKey();
         }
 
         $this->redis->remove($keys);
+    }
+
+    /**
+     * @param CacheBuilderInterface $builder
+     * @return void
+     * @throws RedisConnectionException
+     */
+    public function invalidateByContext(CacheBuilderInterface $builder): void
+    {
+        $contextDependentsKeys = $this->redis->getKeys($builder->getContextKeyPattern());
+        $this->redis->remove($contextDependentsKeys);
     }
 
     /**

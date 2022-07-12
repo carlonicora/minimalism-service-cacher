@@ -316,10 +316,10 @@ class CacheBuilder implements CacheBuilderInterface
     public function getListItemKey($identifier): string
     {
         return 'minimalism'
-        . $this->interpreter->getTypePart($this->type)
-        . $this->interpreter->getCacheIdentificatorPart($this->cacheIdentifier)
-        . $this->interpreter->getCacheIdentificatorPartForAlternateIdentificator($this->list, $identifier)
-        . $this->interpreter->getCacheContextPart($this->contexts);
+            . $this->interpreter->getTypePart($this->type)
+            . $this->interpreter->getCacheIdentificatorPart($this->cacheIdentifier)
+            . $this->interpreter->getCacheIdentificatorPartForAlternateIdentificator($this->list, $identifier)
+            . $this->interpreter->getCacheContextPart($this->contexts);
     }
 
     /**
@@ -369,5 +369,17 @@ class CacheBuilder implements CacheBuilderInterface
             . $this->interpreter->getAllListsKeyPart()
             . $this->interpreter->getCacheIdentificatorPart($this->cacheIdentifier)
             . $this->interpreter->getCacheAllContextParts();
+    }
+
+    /**
+     * @return string
+     */
+    public function getContextKeyPattern(): string
+    {
+        return 'minimalism'
+            . $this->interpreter->getAllTypesPart()
+            . $this->interpreter->getAllListsKeyPart()
+            . $this->interpreter->getAllCacheIdentificatorParts($this->cacheIdentifier)
+            . $this->interpreter->getCacheContextPart($this->contexts);
     }
 }
